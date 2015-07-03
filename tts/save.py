@@ -6,6 +6,7 @@ def get_save_urls(savedata):
   Iterate over all the values in the json file, building a (key,value) set of
   all the values whose key ends in "URL"
   '''
+  # TODO: handle duplicate list ids
   def parse_list(data):
     urls=set()
     for item in data:

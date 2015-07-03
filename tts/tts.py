@@ -28,8 +28,11 @@ def strip_filename(filename):
   valid_chars = "%s%s" % (string.ascii_letters, string.digits)
   return ''.join(c for c in filename if c in valid_chars)
 
+def get_workshop_filename(id):
+  return os.path.join(get_workshop_dir(),id+'.json')
+
 def load_workshop_file(id):
-  filename=os.path.join(get_workshop_dir(),id+'.json')
+  filename=get_workshop_filename(id)
   if not os.path.isfile(filename):
     print("Unable to find mod file #%s" %id)
     return None
