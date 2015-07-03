@@ -35,7 +35,7 @@ def do_export(args):
     else:
       filename=args.output
   else:
-    filename=args.id+".ttspak"
+    filename=args.id+".pak"
 
   data=tts.load_workshop_file(args.id)
   if not data:
@@ -47,21 +47,30 @@ def do_export(args):
     print(save)
     return
   if os.path.isfile(filename) and not args.force:
-    print("%s already exists. Please specify another file or use '-f'")
+    print("%s already exists. Please specify another file or use '-f'" % filename)
     return
   print("Exporting workshop save file %s to %s" % (args.id,filename))
   with zipfile.ZipFile(filename,'w') as zf:
     savefile=tts.get_workshop_filename(args.id)
-    zf.write(savefile,os.path.join("Mods","Workshop",+os.path.basename(savefile)))
+    zf.write(savefile,os.path.join("Mods","Workshop",os.path.basename(savefile)))
     for url in save.models:
       zf.write(url.location,os.path.join("Mods","Models",os.path.basename(url.location)))
     for url in save.images:
       zf.write(url.location,os.path.join("Mods","Images",os.path.basename(url.location)))
   # TODO: exception handling
   print("Done")
+  return
 
 def do_import(args):
-  pass
+  if not os.path.isfile(args.file):
+    print("Unable to find mod pak %s" % args.file)
+    return
+  with zipfile.ZipFile(args.file,'r') as zf:
+    # TODO: handle exceptions
+    # TODO: Figure out a way to check this is a pack file.
+    zf.extractall(tts.get_tts_dir())
+  print("Done")
+  return
 
 def main():
   parser = argparse.ArgumentParser(description="Manipulate Tabletop Simulator files")
@@ -86,7 +95,7 @@ def main():
   # import command
   parser_import = subparsers.add_parser('import',help="Import a mod.",description="Import an previously exported mod.")
   parser_import.add_argument("file",help="Mod pak file to import.")
-  parser_export.set_defaults(func=do_import)
+  parser_import.set_defaults(func=do_import)
 
 
   args = parser.parse_args()
