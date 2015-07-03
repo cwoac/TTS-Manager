@@ -7,14 +7,18 @@ import codecs
 import locale
 import zipfile
 
+def list_saves():
+  print("Saved games:")
+  for (name,id) in tts.describe_save_files():
+    print("%s (%s)" % (name,id) )
+
 
 def list_installed():
   print("Installed workshop files:")
   for (name,id) in tts.describe_workshop_files():
     print("%s (%s)" % (name,id) )
 
-def list_item(id):
-  data=tts.load_workshop_file(id)
+def list_item(data):
   if not data:
     list_installed()
     return
@@ -23,9 +27,17 @@ def list_item(id):
 
 def do_list(args):
   if not args.id:
-    list_installed()
+    if args.saves:
+      list_saves()
+    else:
+      list_installed()
   else:
-    list_item(args.id)
+    data=None
+    if args.saves:
+      data=tts.load_save_file(args.id)
+    else:
+      data=tts.load_workshop_file(args.id)
+    list_item(data)
 
 def do_export(args):
   filename=None
@@ -82,6 +94,7 @@ def main():
     If no id is provided, then this will return a list of all installed modules.
     If an id is provided, then this will list the contents of that modules.
     ''')
+  parser_list.add_argument("-s","--saves",action="store_true",help="List saves rather than workshop files.")
   parser_list.add_argument("id",nargs='?',help="ID of specific mod to list details of.")
   parser_list.set_defaults(func=do_list)
 
