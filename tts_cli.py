@@ -1,6 +1,5 @@
 #!/usr/bin/env python2.7
 import tts
-import tts.url
 import argparse
 import os.path
 import sys
@@ -18,11 +17,14 @@ def list_item(id):
   if not data:
     list_installed()
     return
+  save=tts.Save(data)
+  print save
 
 def list(args):
   if not args.id:
     list_installed()
-  list_item(args.id)
+  else:
+    list_item(args.id)
 
 def main():
     parser = argparse.ArgumentParser(description="Manipulate Tabletop Simulator files")
@@ -34,7 +36,7 @@ def main():
     If no id is provided, then this will return a list of all installed modules.
     If an id is provided, then this will list the contents of that modules.
     ''')
-    parser_list.add_argument("id",help="ID of specific mod to list details of.")
+    parser_list.add_argument("id",nargs='?',help="ID of specific mod to list details of.")
     parser_list.set_defaults(func=list)
 
     args = parser.parse_args()

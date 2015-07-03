@@ -35,3 +35,16 @@ class Url:
       self._looked_for_location=True
 
     return self._location
+
+  def __repr__(self):
+    return "%s: %s (%s)" % ( \
+           "Image" if self.isImage else "Model", \
+           self.url, \
+           self.location if self.exists else "Not Found")
+
+  def __str__(self):
+    return "%s: %s (%s)" % ( \
+           "Image" if self.isImage else "Model", \
+           self.url, \
+           "Found" if self.exists else "Not Found")
+

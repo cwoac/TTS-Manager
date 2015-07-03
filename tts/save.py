@@ -37,5 +37,21 @@ class Save:
     self.images=[ x for x in self.urls if x.isImage ]
 
 
+  @property
+  def isInstalled(self):
+    """Is every url referenced by this save installed?"""
+    for url in self.urls:
+      if not url.exists:
+        return False
+    return True
 
+  def __str__(self):
+    result = "Save: %s\n" % self.data['SaveName']
+    result += "Images:\n"
+    for x in self.images:
+      result += str(x)+"\n"
+    result += "Models:\n"
+    for x in self.models:
+      result += str(x)+"\n"
+    return result
 __all__ = [ 'Save' ]
