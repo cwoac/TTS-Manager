@@ -17,8 +17,21 @@ def get_save_urls(savedata):
     if not data:
       return urls
     for key in data:
+      if type(data[key]) is not str or key=='PageURL':
+        # If it isn't a string, it can't be an url.
+        # Also don't save tablet state.
+        continue
       if key.endswith('URL') and data[key]!='':
         urls.add((key,data[key]))
+        continue
+      protocols=data[key].split('://')
+      if len(protocols)==1:
+        # not an url
+        continue
+      if protocols[0] in ['http','https','ftp']:
+        # belt + braces.
+        urls.add((key,data[key]))
+        continue
     for item in data.values():
       urls |= get_save_urls(item)
     return urls
