@@ -1,12 +1,7 @@
-#!/usr/bin/env python27
-
 import tts
-import tts_cli
-import Tkinter as Tk
-import ttk
-import ScrolledText
-import tkFileDialog
-import tkMessageBox
+import tkinter as Tk
+import tkinter.ttk as ttk
+import tkinter.scrolledtext as ScrolledText
 import os.path
 
 class TTS_GUI:
@@ -17,8 +12,37 @@ class TTS_GUI:
     else:
       data=tts.describe_workshop_files()
     self.file_list.delete(0,Tk.END)
+    self.file_store={}
+    i=0
     for (name,number) in data:
       self.file_list.insert(Tk.END,"%s (%s)" % (name,number))
+      self.file_store[i]=number
+      i+=1
+    self.file_list_current = None
+    self.poll_file_list()
+
+  def poll_file_list(self):
+    now = self.file_list.curselection()
+    if now != self.file_list_current:
+      self.file_list_has_changed(now)
+      self.file_list_current=now
+    self.root.after(250,self.poll_file_list)
+
+  def file_list_has_changed(self,now):
+    if not now:
+      return
+    ident=self.file_store[now[0]]
+    data=None
+    if self.isSaves.get():
+      data=tts.load_save_file(ident)
+    else:
+      data=tts.load_workshop_file(ident)
+    # TODO: error handling
+    save=tts.Save(data)
+    self.details_list.config(state=Tk.NORMAL)
+    self.details_list.delete(1.0,Tk.END)
+    self.details_list.insert(Tk.END,save)
+    self.details_list.config(state=Tk.DISABLED)
 
   def populate_list(self,frame):
     srcFrame=ttk.Frame(frame)
@@ -43,12 +67,14 @@ class TTS_GUI:
     foundBar.config(command=self.file_list.yview)
     foundBar.pack(side=Tk.RIGHT,fill=Tk.Y)
     self.file_list.pack(side=Tk.LEFT,fill=Tk.BOTH,expand=1)
-    #self.file_list=ScrolledText.ScrolledText(master=frame,height=5).pack(fill=Tk.BOTH, expand=Tk.Y)
     ttk.Label(frame,text="Details:").pack()
-    self.details_list=ScrolledText.ScrolledText(master=frame,height=5).pack(fill=Tk.BOTH, expand=Tk.Y)
+    self.details_list=ScrolledText.ScrolledText(master=frame,height=5)
+    self.details_list.config(state=Tk.DISABLED)
+    self.details_list.pack(fill=Tk.BOTH, expand=Tk.Y)
     self.list_command()
 
   def __init__(self,root):
+    self.root=root
     mode_notebook = ttk.Notebook(root)
     list_frame = ttk.Frame(mode_notebook)
     self.populate_list(list_frame)
