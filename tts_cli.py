@@ -6,6 +6,7 @@ import sys
 import codecs
 import locale
 import zipfile
+import _io
 
 def list_saves():
   result="Saved games:"
@@ -91,8 +92,8 @@ def do_import(args):
 
 def main():
   parser = argparse.ArgumentParser(description="Manipulate Tabletop Simulator files")
-  subparsers = parser.add_subparsers(title='command',description='Valid commands.')
-
+  subparsers = parser.add_subparsers(dest='parser',title='command',description='Valid commands.')
+  subparsers.required=True
   # add list command
   parser_list = subparsers.add_parser('list',help="List installed mods.",description='''
     List installed mods.
@@ -127,5 +128,6 @@ def main():
 
 if __name__ == "__main__":
   # fix windows' poor unicode support
-  sys.stdout = codecs.getwriter(locale.getpreferredencoding())(sys.stdout)
+  sys.stdout=_io.TextIOWrapper(sys.stdout.buffer,sys.stdout.encoding,'replace',sys.stdout.newlines,sys.stdout.line_buffering)
+
   main()

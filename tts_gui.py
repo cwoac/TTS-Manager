@@ -113,7 +113,17 @@ class TTS_GUI:
     self.targetEntry.delete(0,Tk.END)
     self.targetEntry.insert(0,self.export_filename)
 
-  def export(self):
+  def pickImportTarget(self):
+    self.import_filename = filedialog.askopenfilename(
+      parent=self.root,
+      initialdir=os.path.join(os.path.expanduser("~"),"Downloads"),
+      filetypes=[('PAK files','*.pak')],
+      defaultextension='pak',
+      title='Choose import target')
+    self.importEntry.delete(0,Tk.END)
+    self.importEntry.insert(0,self.import_filename)
+
+  def exportPak(self):
     with zipfile.ZipFile(self.export_filename,'w') as zf:
       if self.export_savedata.isWorkshop:
         savefile=tts.get_workshop_filename(self.export_savedata.ident)
@@ -127,6 +137,12 @@ class TTS_GUI:
         zf.write(url.location,os.path.join("Mods","Images",os.path.basename(url.location)))
     # TODO: Error handling.
     messagebox.showinfo("TTS Manager","Export Done.")
+
+  def importPak(self):
+    # TODO: Any form of error checking.
+    with zipfile.ZipFile(self.import_filename,'r') as zf:
+      zf.extractall(tts.get_tts_dir())
+    messagebox.showinfo("TTS Manager","Import Done.")
 
   def populate_export_frame(self,frame):
     self.export_sb=SaveBrowser(frame,self.update_export_frame_details)
@@ -143,14 +159,25 @@ class TTS_GUI:
     self.export_savedata=None
     self.statusLabel=ttk.Label(exportFrame,text="")
     self.statusLabel.pack()
-    self.exportButton=ttk.Button(exportFrame,text="Export",command=self.export,state=Tk.DISABLED)
+    self.exportButton=ttk.Button(exportFrame,text="Export",command=self.exportPak,state=Tk.DISABLED)
     self.exportButton.pack()
 
     self.export_sb.list_command()
 
-
   def populate_import_frame(self,frame):
-    pass
+    importEntryFrame=ttk.Frame(frame)
+    importEntryFrame.pack(expand=Tk.Y,fill=Tk.BOTH)
+    ttk.Label(importEntryFrame,text="Select pak to import.").pack()
+    self.importEntry=ttk.Entry(importEntryFrame)
+    self.importEntry.pack(side=Tk.LEFT,expand=Tk.Y,fill=Tk.X)
+    self.import_filename=None
+    importEntryButton=ttk.Button(importEntryFrame,text="Browse",command=self.pickImportTarget).pack(side=Tk.LEFT)
+
+    importFrame=ttk.Frame(frame)
+    importFrame.pack(expand=Tk.Y,fill=Tk.BOTH)
+    ttk.Button(importFrame,text="Import",command=self.importPak).pack()
+
+
 
 
   def __init__(self,root):

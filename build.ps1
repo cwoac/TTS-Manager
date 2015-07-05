@@ -1,4 +1,4 @@
-$scripts = @('tts_cli.py')
+$scripts = @('tts_cli.py','tts_gui.py')
 foreach ($script in $scripts)
 {
 	write-host 'Compiling '$script
