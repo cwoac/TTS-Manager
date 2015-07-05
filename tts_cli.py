@@ -8,36 +8,42 @@ import locale
 import zipfile
 
 def list_saves():
-  print("Saved games:")
+  result="Saved games:"
   for (name,id) in tts.describe_save_files():
-    print("%s (%s)" % (name,id) )
+    result+="\n%s (%s)" % (name,id)
+  return 0,result
 
 
 def list_installed():
-  print("Installed workshop files:")
+  result="Installed workshop files:"
   for (name,id) in tts.describe_workshop_files():
-    print("%s (%s)" % (name,id) )
+    result += "\n%s (%s)" % (name,id)
+  return 0,result
 
 def list_item(data):
   if not data:
     list_installed()
     return
   save=tts.Save(data)
-  print save
+  return 0,save
+
 
 def do_list(args):
+  rc=0
+  result=None
   if not args.id:
     if args.saves:
-      list_saves()
+      rc,result=list_saves()
     else:
-      list_installed()
+      rc,result=list_installed()
   else:
     data=None
     if args.saves:
       data=tts.load_save_file(args.id)
     else:
       data=tts.load_workshop_file(args.id)
-    list_item(data)
+    rc,result=list_item(data)
+  return rc,result
 
 def do_export(args):
   filename=None
@@ -51,16 +57,12 @@ def do_export(args):
 
   data=tts.load_workshop_file(args.id)
   if not data:
-    print("Unable to load data for workshop save file %s" % args.id)
-    return
+    return 1, "Unable to load data for workshop save file %s" % args.id
   save=tts.Save(data)
   if not save.isInstalled:
-    print("Unable to find all urls required by %s" % args.id)
-    print(save)
-    return
+    return 1, "Unable to find all urls required by %s\n%s" % (args.id,save)
   if os.path.isfile(filename) and not args.force:
-    print("%s already exists. Please specify another file or use '-f'" % filename)
-    return
+    return 1,"%s already exists. Please specify another file or use '-f'" % filename
   print("Exporting workshop save file %s to %s" % (args.id,filename))
   with zipfile.ZipFile(filename,'w') as zf:
     savefile=tts.get_workshop_filename(args.id)
@@ -70,8 +72,7 @@ def do_export(args):
     for url in save.images:
       zf.write(url.location,os.path.join("Mods","Images",os.path.basename(url.location)))
   # TODO: exception handling
-  print("Done")
-  return
+  return 0,"Exported %s to %s" % (args.id,filename)
 
 def do_import(args):
   if not os.path.isfile(args.file):
@@ -81,8 +82,7 @@ def do_import(args):
     # TODO: handle exceptions
     # TODO: Figure out a way to check this is a pack file.
     zf.extractall(tts.get_tts_dir())
-  print("Done")
-  return
+  return 0,"Imported %s" % args.file
 
 def main():
   parser = argparse.ArgumentParser(description="Manipulate Tabletop Simulator files")
@@ -100,7 +100,7 @@ def main():
 
   # export command
   parser_export = subparsers.add_parser('export',help="Export a mod.",description='Export a mod in a format suitible for later import.')
-  parser_export.add_argument("id",help="ID of mod to export")
+  parser_export.add_argument("id",help="ID of mod/name of savegame to export.")
   parser_export.add_argument("-o","--output",help="Location/file to export to.")
   parser_export.add_argument("-f","--force",action="store_true",help="Force creation of export file.")
   parser_export.set_defaults(func=do_export)
@@ -112,7 +112,10 @@ def main():
 
 
   args = parser.parse_args()
-  args.func(args)
+  rc,message = args.func(args)
+  if message:
+    print(message)
+  sys.exit(rc)
 
 if __name__ == "__main__":
   # fix windows' poor unicode support
