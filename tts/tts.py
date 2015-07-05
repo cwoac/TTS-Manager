@@ -45,7 +45,7 @@ def get_workshop_filename(id):
 
 def load_json_file(filename):
   if not os.path.isfile(filename):
-    print("Unable to find mod file #%s" %id)
+    print("Unable to find mod file %s" % filename)
     return None
   data=open(filename,'r').read()
   j_data=json.loads(data)

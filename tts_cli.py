@@ -55,9 +55,14 @@ def do_export(args):
   else:
     filename=args.id+".pak"
 
-  data=tts.load_workshop_file(args.id)
+  data=None
+  if args.workshop or (args.id[0].isdigit() and not args.save):
+    data=tts.load_workshop_file(args.id)
+  if args.save or (args.id.startswith('TS_') and not args.workshop):
+    data=tts.load_save_file(args.id)
   if not data:
-    return 1, "Unable to load data for workshop save file %s" % args.id
+    return 1, "Unable to load data for file %s (perhaps specify type with -s/-w)" % args.id
+
   save=tts.Save(data)
   if not save.isInstalled:
     return 1, "Unable to find all urls required by %s\n%s" % (args.id,save)
@@ -100,6 +105,9 @@ def main():
 
   # export command
   parser_export = subparsers.add_parser('export',help="Export a mod.",description='Export a mod in a format suitible for later import.')
+  group_export=parser_export.add_mutually_exclusive_group()
+  group_export.add_argument("-w","--workshop",action="store_true",help="ID is of workshop file.")
+  group_export.add_argument("-s","--save",action="store_true",help="ID is of savegame file.")
   parser_export.add_argument("id",help="ID of mod/name of savegame to export.")
   parser_export.add_argument("-o","--output",help="Location/file to export to.")
   parser_export.add_argument("-f","--force",action="store_true",help="Force creation of export file.")
