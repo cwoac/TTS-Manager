@@ -41,7 +41,7 @@ def get_save_urls(savedata):
         # Also don't save tablet state.
         continue
       if key.endswith('URL') and data[key]!='':
-        urls.add((key,data[key]))
+        urls.add(data[key])
         continue
       protocols=data[key].split('://')
       if len(protocols)==1:
@@ -49,7 +49,7 @@ def get_save_urls(savedata):
         continue
       if protocols[0] in ['http','https','ftp']:
         # belt + braces.
-        urls.add((key,data[key]))
+        urls.add(data[key])
         continue
     for item in data.values():
       urls |= get_save_urls(item)
@@ -69,7 +69,7 @@ class Save:
     self.isWorkshop=isWorkshop
     self.filesystem = filesystem
     self.filename=filename
-    self.urls = [ Url(a,b,self.filesystem) for (a,b) in get_save_urls(savedata) ]
+    self.urls = [ Url(url,self.filesystem) for url in get_save_urls(savedata) ]
     self.models=[ x for x in self.urls if not x.isImage ]
     self.images=[ x for x in self.urls if x.isImage ]
 

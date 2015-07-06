@@ -1,8 +1,7 @@
 class Url:
-  def __init__(self,parameter,url,path):
+  def __init__(self,url,path):
     self.url = url
     self.path = path
-    self.parameter = parameter
     self._isImage=None
     self._looked_for_location=False
     self._location=None
