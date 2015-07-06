@@ -11,6 +11,11 @@ def strip_filename(filename):
   valid_chars = "%s%s" % (string.ascii_letters, string.digits)
   return ''.join(c for c in filename if c in valid_chars)
 
+def validate_metadata(metadata):
+  # TODO: extract into new class
+  if not metadata or type(metadata) is not dict:
+    return False
+  return 'Ver' in metadata and 'Id' in metadata and 'Type' in metadata
 
 def load_json_file(filename):
   if not filename or not os.path.isfile(filename):

@@ -2,6 +2,23 @@ from .tts import *
 from .url import Url
 import tts
 import zipfile
+import json
+
+def importPak(filesystem,filename):
+  if not os.path.isfile(filename):
+    return 1, "Unable to find mod pak %s" % filename
+  if not zipfile.is_zipfile(filename):
+    return 1, "Mod pak %s format appears corrupt." % filename
+  with zipfile.ZipFile(filename,'r') as zf:
+    if not zf.comment:
+      return 1, "Missing pak header comment in %s." % filename
+    metadata=json.loads(zf.comment.decode('utf-8'))
+    if not tts.validate_metadata(metadata):
+      return 1, "Unable to read pak header comment in %s." % filename
+    print("Extracting %s pak for id %s (pak version %s)" % (metadata['Type'],metadata['Id'],metadata['Ver']))
+    # TODO: handle exceptions
+    zf.extractall(filesystem.basepath)
+  return 0,"Imported %s" % filename
 
 def get_save_urls(savedata):
   '''
@@ -58,8 +75,15 @@ class Save:
 
   def export(self,export_filename):
     zfs = tts.filesystem.FileSystem("")
+    zipComment = {
+      "Ver":1,
+      "Id":self.ident,
+      "Type":"Workshop" if self.isWorkshop else "Save"
+    }
+
     # TODO: error checking.
     with zipfile.ZipFile(export_filename,'w') as zf:
+      zf.comment=json.dumps(zipComment).encode('utf-8')
       if self.isWorkshop:
         zf.write(self.filename,zfs.get_workshop_path(os.path.basename(self.filename)))
       else:

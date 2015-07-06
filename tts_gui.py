@@ -133,10 +133,9 @@ class TTS_GUI:
     messagebox.showinfo("TTS Manager","Export Done.")
 
   def importPak(self):
-    # TODO: Any form of error checking.
-    with zipfile.ZipFile(self.import_filename,'r') as zf:
-      zf.extractall(tts.get_tts_dir())
-    messagebox.showinfo("TTS Manager","Import Done.")
+    # TODO: Exception Handling
+    rc,message=tts.save.importPak(self.filesystem,self.import_filename)
+    messagebox.showinfo("TTS Manager",message)
 
   def populate_export_frame(self,frame):
     self.export_sb=SaveBrowser(frame,self.update_export_frame_details,self.filesystem)

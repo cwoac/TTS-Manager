@@ -6,6 +6,8 @@ import sys
 import codecs
 import locale
 import _io
+import json
+import zipfile
 
 class TTS_CLI:
   def __init__(self):
@@ -126,14 +128,7 @@ class TTS_CLI:
     return 0,"Exported %s to %s" % (args.id,filename)
 
   def do_import(self,args):
-    if not os.path.isfile(args.file):
-      print("Unable to find mod pak %s" % args.file)
-      return
-    with zipfile.ZipFile(args.file,'r') as zf:
-      # TODO: handle exceptions
-      # TODO: Figure out a way to check this is a pack file.
-      zf.extractall(self.filesystem.basepath)
-    return 0,"Imported %s" % args.file
+    return tts.save.importPak(self.filesystem,args.file)
 
 if __name__ == "__main__":
   # fix windows' poor unicode support
