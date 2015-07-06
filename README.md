@@ -20,7 +20,8 @@ download `tts_cli.exe` from the [releases](https://github.com/cwoac/TTS-Manager/
 Either download a compiled exe, or run using python3.
 
 ## TODO
+These are primarily tracked on github, but roughly:
 - Downloading of missing data items.
-- Some form of verification of pak contents.
+- Uninstalling paks
 - Error handling.
 - LOTS MORE TESTING.
