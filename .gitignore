@@ -55,3 +55,8 @@ docs/_build/
 
 # PyBuilder
 target/
+
+#TTS specific stuff
+*.pak
+tts_scratch.py
+tts_gui*.zip
