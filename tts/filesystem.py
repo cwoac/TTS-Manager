@@ -32,6 +32,9 @@ class FileSystem:
   def get_workshop_path(self,filename):
     return os.path.join(self._workshop,filename)
 
+  def get_save_path(self,filename):
+    return os.path.join(self._saves,filename)
+
   def find_details(self,basename):
     result=self.find_image(basename)
     if result:
@@ -71,16 +74,20 @@ class FileSystem:
     files.remove('WorkshopFileInfos')
     return files
 
-  def get_json_filename(self,basename,prefer_workshop=True):
-    print("Looking for %s" % basename)
+  def get_json_filename_from(self,basename,paths):
     result=None
-    paths = [self._workshop,self._saves] if prefer_workshop else [self._saves,self._workshop]
     for pth in paths:
-      filename=os.path.join(self._workshop,basename+'.json')
-      print("considering %s" %filename)
+      filename=os.path.join(pth,basename+'.json')
       if os.path.isfile(filename):
-        print("match")
         result=filename
         break
     return result
 
+  def get_json_filename(self,basename):
+    return self.get_json_filename_from(basename,[self._workshop,self._saves])
+
+  def get_workshop_filename(self,basename):
+    return self.get_json_filename_from(basename,[self._workshop])
+
+  def get_save_filename(self,basename):
+    return self.get_json_filename_from(basename,[self._saves])

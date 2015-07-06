@@ -5,10 +5,10 @@ import tkinter.filedialog as filedialog
 import tkinter.messagebox as messagebox
 import tkinter.scrolledtext as ScrolledText
 import os.path
-import zipfile
 
 class SaveBrowser():
-  def __init__(self,master,poll_command):
+  def __init__(self,master,poll_command,filesystem):
+    self.filesystem = filesystem
     self.master=master
     srcFrame=ttk.Frame(master)
     srcFrame.pack()
@@ -40,9 +40,9 @@ class SaveBrowser():
     """ Populates the list box"""
     data=None
     if self.isSaves.get():
-      data=tts.describe_save_files()
+      data=tts.describe_save_files(self.filesystem)
     else:
-      data=tts.describe_workshop_files()
+      data=tts.describe_workshop_files(self.filesystem)
     self.file_list.delete(0,Tk.END)
     self.file_store={}
     i=0
@@ -63,13 +63,18 @@ class SaveBrowser():
     if not now:
       return
     ident=self.file_store[now[0]]
-    data=None
+    filename=None
     if self.isSaves.get():
-      data=tts.load_save_file(ident)
+      filename=self.filesystem.get_save_filename(ident)
     else:
-      data=tts.load_workshop_file(ident)
+      filename=self.filesystem.get_workshop_filename(ident)
+    data=tts.load_json_file(filename)
     # TODO: error handling
-    save=tts.Save(data,ident,not self.isSaves.get())
+    save=tts.Save(savedata=data,
+                  ident=ident,
+                  filename=filename,
+                  isWorkshop=not self.isSaves.get(),
+                  filesystem=self.filesystem)
     self.poll_command(save)
 
 
@@ -81,7 +86,7 @@ class TTS_GUI:
     self.details_list.config(state=Tk.DISABLED)
 
   def populate_list_frame(self,frame):
-    self.list_sb=SaveBrowser(frame,self.update_list_frame_details)
+    self.list_sb=SaveBrowser(frame,self.update_list_frame_details,self.filesystem)
     ttk.Label(frame,text="Details:").pack()
     self.details_list=ScrolledText.ScrolledText(master=frame,height=5)
     self.details_list.config(state=Tk.DISABLED)
@@ -124,18 +129,7 @@ class TTS_GUI:
     self.importEntry.insert(0,self.import_filename)
 
   def exportPak(self):
-    with zipfile.ZipFile(self.export_filename,'w') as zf:
-      if self.export_savedata.isWorkshop:
-        savefile=tts.get_workshop_filename(self.export_savedata.ident)
-        zf.write(savefile,os.path.join("Mods","Workshop",os.path.basename(savefile)))
-      else:
-        savefile=tts.get_save_filename(self.export_savedata.ident)
-        zf.write(savefile,os.path.join("Saves",os.path.basename(savefile)))
-      for url in self.export_savedata.models:
-        zf.write(url.location,os.path.join("Mods","Models",os.path.basename(url.location)))
-      for url in self.export_savedata.images:
-        zf.write(url.location,os.path.join("Mods","Images",os.path.basename(url.location)))
-    # TODO: Error handling.
+    self.export_savedata.export(self.export_filename)
     messagebox.showinfo("TTS Manager","Export Done.")
 
   def importPak(self):
@@ -145,7 +139,7 @@ class TTS_GUI:
     messagebox.showinfo("TTS Manager","Import Done.")
 
   def populate_export_frame(self,frame):
-    self.export_sb=SaveBrowser(frame,self.update_export_frame_details)
+    self.export_sb=SaveBrowser(frame,self.update_export_frame_details,self.filesystem)
     targetFrame=ttk.Frame(frame)
     targetFrame.pack(expand=1,fill="both")
     ttk.Label(targetFrame,text="Select output file").pack()
@@ -182,6 +176,7 @@ class TTS_GUI:
 
   def __init__(self,root):
     self.root=root
+    self.filesystem=tts.get_default_fs()
     mode_notebook = ttk.Notebook(root)
     list_frame = ttk.Frame(mode_notebook)
     self.populate_list_frame(list_frame)

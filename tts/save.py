@@ -1,5 +1,7 @@
 from .tts import *
 from .url import Url
+import tts
+import zipfile
 
 def get_save_urls(savedata):
   '''
@@ -44,14 +46,28 @@ def get_save_urls(savedata):
 
 
 class Save:
-  def __init__(self,savedata,ident=None,isWorkshop=True,filesystem=get_default_fs()):
+  def __init__(self,savedata,filename,ident,isWorkshop=True,filesystem=get_default_fs()):
     self.data = savedata
     self.ident=ident
     self.isWorkshop=isWorkshop
     self.filesystem = filesystem
+    self.filename=filename
     self.urls = [ Url(a,b,self.filesystem) for (a,b) in get_save_urls(savedata) ]
     self.models=[ x for x in self.urls if not x.isImage ]
     self.images=[ x for x in self.urls if x.isImage ]
+
+  def export(self,export_filename):
+    zfs = tts.filesystem.FileSystem("")
+    # TODO: error checking.
+    with zipfile.ZipFile(export_filename,'w') as zf:
+      if self.isWorkshop:
+        zf.write(self.filename,zfs.get_workshop_path(os.path.basename(self.filename)))
+      else:
+        zf.write(self.filename,zfs.get_save_path(os.path.basename(self.filename)))
+      for url in self.models:
+        zf.write(url.location,zfs.get_model_path(os.path.basename(url.location)))
+      for url in self.images:
+        zf.write(url.location,zfs.get_image_path(os.path.basename(url.location)))
 
 
   @property

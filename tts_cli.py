@@ -5,7 +5,6 @@ import os.path
 import sys
 import codecs
 import locale
-import zipfile
 import _io
 
 class TTS_CLI:
@@ -61,11 +60,11 @@ class TTS_CLI:
       result += "\n%s (%s)" % (name,id)
     return 0,result
 
-  def list_item(self,data):
+  def list_item(self,data,filename,ident):
     if not data:
       self.list_installed()
       return
-    save=tts.Save(data)
+    save=tts.Save(savedata=data,ident=ident,filename=filename)
     return 0,save
 
 
@@ -78,9 +77,9 @@ class TTS_CLI:
       else:
         rc,result=self.list_installed()
     else:
-      data=None
-      data=tts.load_file(args.id,self.filesystem)
-      rc,result=self.list_item(data)
+      filename=self.filesystem.get_json_filename(args.id)
+      data=tts.load_json_file(filename)
+      rc,result=self.list_item(data,filename,args.id)
     return rc,result
 
   def do_export(self,args):
@@ -95,29 +94,34 @@ class TTS_CLI:
 
     data=None
     json_filename=None
+    isWorkshop=True
     if args.workshop or not args.save:
-      json_filename=self.filesystem.get_json_filename(args.id,True)
+      json_filename=self.filesystem.get_workshop_filename(args.id)
+    if not json_filename and not args.workshop:
+      json_filename=self.filesystem.get_save_filename(args.id)
+      isWorkshop=False
+
     if args.save:
-      json_filename=self.filesystem.get_json_filename(args.id,False)
+      json_filename=self.filesystem.get_save_filename(args.id)
+
+
     if not json_filename:
-      return 1, "Unable to find filename for id %s" % args.id
+      return 1, "Unable to find filename for id %s (wrong -s/-w specified?)" % args.id
     data=tts.load_json_file(json_filename)
     if not data:
       return 1, "Unable to load data for file %s" % json_filename
 
-    save=tts.Save(data)
+    save=tts.Save(savedata=data,
+                  filename=json_filename,
+                  ident=args.id,
+                  isWorkshop=isWorkshop,
+                  filesystem=self.filesystem)
     if not save.isInstalled:
       return 1, "Unable to find all urls required by %s\n%s" % (args.id,save)
     if os.path.isfile(filename) and not args.force:
       return 1,"%s already exists. Please specify another file or use '-f'" % filename
     print("Exporting json file %s to %s" % (args.id,filename))
-    zfs = tts.filesystem.FileSystem("")
-    with zipfile.ZipFile(filename,'w') as zf:
-      zf.write(json_filename,zfs.get_workshop_path(os.path.basename(json_filename)))
-      for url in save.models:
-        zf.write(url.location,zfs.get_model_path(os.path.basename(url.location)))
-      for url in save.images:
-        zf.write(url.location,zfs.get_image_path(os.path.basename(url.location)))
+    save.export(filename)
     # TODO: exception handling
     return 0,"Exported %s to %s" % (args.id,filename)
 

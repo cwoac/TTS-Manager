@@ -13,28 +13,34 @@ def strip_filename(filename):
 
 
 def load_json_file(filename):
-  if not os.path.isfile(filename):
+  if not filename or not os.path.isfile(filename):
     print("Unable to find mod file %s" % filename)
     return None
   data=open(filename,'r').read()
   j_data=json.loads(data)
   return j_data
 
-def load_file(ident,filesystem=get_default_fs(),prefer_workshop=True):
-  return load_json_file(filesystem.get_json_filename(ident,prefer_workshop))
+def load_workshop_file(ident,filesystem):
+  filename=filesystem.get_workshop_filename(ident)
+  return load_json_file(filename)
 
-def describe_workshop_files(filesystem=get_default_fs()):
+
+def load_save_file(ident,filesystem):
+  filename=filesystem.get_save_filename(ident)
+  return load_json_file(filename)
+
+def describe_workshop_files(filesystem):
   output=[]
   for id in filesystem.get_workshop_filenames():
-    json=load_workshop_file(id)
+    json=load_workshop_file(id,filesystem)
     name=json['SaveName']
     output.append((name,id))
   return output
 
-def describe_save_files(filesystem=get_default_fs()):
+def describe_save_files(filesystem):
   output=[]
   for savefile in filesystem.get_save_filenames():
-    json=load_save_file(savefile)
+    json=load_save_file(savefile,filesystem)
     name=json['SaveName']
     output.append((name,savefile))
   return output
