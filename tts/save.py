@@ -44,11 +44,12 @@ def get_save_urls(savedata):
 
 
 class Save:
-  def __init__(self,savedata,ident=None,isWorkshop=True):
+  def __init__(self,savedata,ident=None,isWorkshop=True,filesystem=get_default_fs()):
     self.data = savedata
     self.ident=ident
     self.isWorkshop=isWorkshop
-    self.urls = [ Url(a,b) for (a,b) in get_save_urls(savedata) ]
+    self.filesystem = filesystem
+    self.urls = [ Url(a,b,self.filesystem) for (a,b) in get_save_urls(savedata) ]
     self.models=[ x for x in self.urls if not x.isImage ]
     self.images=[ x for x in self.urls if x.isImage ]
 

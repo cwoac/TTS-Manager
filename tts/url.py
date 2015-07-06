@@ -1,14 +1,16 @@
-import os.path
-from .tts import get_image_dir,strip_filename,get_model_dir
-
 class Url:
-  def __init__(self,parameter,url):
+  def __init__(self,parameter,url,path):
     self.url = url
+    self.path = path
     self.parameter = parameter
-    # TODO: Are there others model types?
-    self.isImage = parameter not in ['MeshURL' , 'ColliderURL']
+    self._isImage=None
     self._looked_for_location=False
     self._location=None
+
+  def examine_filesystem(self):
+    if not self._looked_for_location:
+      self._location,self._isImage=self.path.find_details(self.url)
+      self._looked_for_location=True
 
   @property
   def exists(self):
@@ -16,24 +18,15 @@ class Url:
     return self.location != None
 
   @property
+  def isImage(self):
+    """Do we think this is an image?"""
+    self.examine_filesystem()
+    return self._isImage
+
+  @property
   def location(self):
     """Return the location of the file on disk for this url, if it exists."""
-    if not self._looked_for_location:
-      if self.isImage:
-        for image_format in ['.png','.jpg','.bmp']:
-          # TODO: Is this all the supported formats?
-          filename=os.path.join(get_image_dir(),strip_filename(self.url)+image_format)
-          if os.path.isfile(filename):
-            self._location=filename
-            break
-      # got here, must be a model
-      for model_format in ['.obj']:
-        filename=os.path.join(get_model_dir(),strip_filename(self.url)+model_format)
-        if os.path.isfile(filename):
-            self._location=filename
-            break
-      self._looked_for_location=True
-
+    self.examine_filesystem()
     return self._location
 
   def __repr__(self):
