@@ -15,6 +15,14 @@ class FileSystem:
     self._models= os.path.join(self._mods,"Models")
     self._workshop = os.path.join(self._mods,"Workshop")
 
+  def get_dir_by_type(self,save_type):
+    st={
+      tts.SaveType.workshop:self._workshop,
+      tts.SaveType.save:self._saves,
+      tts.SaveType.chest:self._chest
+    }
+    return st[save_type]
+
   @property
   def saves_dir(self):
     return self._saves
@@ -34,6 +42,12 @@ class FileSystem:
 
   def get_save_path(self,filename):
     return os.path.join(self._saves,filename)
+
+  def get_chest_path(self,filename):
+    return os.path.join(self._chest,filename)
+
+  def get_path_by_type(self,filename,save_type):
+    return os.path.join(self.get_dir_by_type(save_type),filename)
 
   def find_details(self,basename):
     result=self.find_image(basename)
@@ -64,15 +78,31 @@ class FileSystem:
         break
     return result
 
+  def get_filenames_in(self,search_path):
+    return [os.path.splitext(file)[0] for file in os.listdir(search_path) if os.path.splitext(file)[1].lower()=='.json']
+
   def get_save_filenames(self):
-    files=[os.path.splitext(file)[0] for file in os.listdir(self._saves) if os.path.splitext(file)[1].lower()=='.json']
+    files=self.get_filenames_in(self._saves)
     files.remove('SaveFileInfos')
     return files
 
   def get_workshop_filenames(self):
-    files=[os.path.splitext(file)[0] for file in os.listdir(self._workshop) if os.path.splitext(file)[1].lower()=='.json']
+    files=self.get_filenames_in(self._workshop)
     files.remove('WorkshopFileInfos')
     return files
+
+  def get_chest_filenames(self):
+    return self.get_filenames_in(self._chest)
+
+  def get_filenames_by_type(self,save_type):
+    if save_type==tts.SaveType.workshop:
+      return self.get_workshop_filenames()
+    if save_type==tts.SaveType.save:
+      return self.get_save_filenames()
+    if save_type==tts.SaveType.chest:
+      return self.get_chest_filenames()
+    # TODO: error handling here
+    return None
 
   def get_json_filename_from(self,basename,paths):
     result=None
@@ -84,10 +114,17 @@ class FileSystem:
     return result
 
   def get_json_filename(self,basename):
-    return self.get_json_filename_from(basename,[self._workshop,self._saves])
+    return self.get_json_filename_from(basename,[self._workshop,self._saves,self._chest])
 
-  def get_workshop_filename(self,basename):
-    return self.get_json_filename_from(basename,[self._workshop])
+  def get_json_filename_for_type(self,basename,save_type):
+    return self.get_json_filename_from(basename,[self.get_dir_by_type(save_type)])
 
-  def get_save_filename(self,basename):
-    return self.get_json_filename_from(basename,[self._saves])
+  def get_json_filename_type(self,basename):
+    if os.path.isfile(os.path.join(self._workshop,basename+'.json')):
+      return SaveType.workshop
+    if os.path.isfile(os.path.join(self._saves,basename+'.json')):
+      return SaveType.save
+    if os.path.isfile(os.path.join(self._chest,basename+'.json')):
+      return SaveType.chest
+    # TODO: error handling here
+    return None

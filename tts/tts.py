@@ -1,7 +1,13 @@
 import os.path
 import string
 import json
+from enum import IntEnum
 from .filesystem import FileSystem,standard_basepath
+
+class SaveType(IntEnum):
+  workshop = 1
+  save = 2
+  chest = 3
 
 def get_default_fs():
   return FileSystem(standard_basepath())
@@ -25,27 +31,14 @@ def load_json_file(filename):
   j_data=json.loads(data)
   return j_data
 
-def load_workshop_file(ident,filesystem):
-  filename=filesystem.get_workshop_filename(ident)
+def load_file_by_type(ident,filesystem,save_type):
+  filename=filesystem.get_json_filename_for_type(ident,save_type)
   return load_json_file(filename)
 
-
-def load_save_file(ident,filesystem):
-  filename=filesystem.get_save_filename(ident)
-  return load_json_file(filename)
-
-def describe_workshop_files(filesystem):
+def describe_files_by_type(filesystem,save_type):
   output=[]
-  for id in filesystem.get_workshop_filenames():
-    json=load_workshop_file(id,filesystem)
+  for filename in filesystem.get_filenames_by_type(save_type):
+    json=load_file_by_type(filename,filesystem,save_type)
     name=json['SaveName']
-    output.append((name,id))
-  return output
-
-def describe_save_files(filesystem):
-  output=[]
-  for savefile in filesystem.get_save_filenames():
-    json=load_save_file(savefile,filesystem)
-    name=json['SaveName']
-    output.append((name,savefile))
+    output.append((name,filename))
   return output

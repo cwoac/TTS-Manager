@@ -22,7 +22,11 @@ class TTS_CLI:
     If no id is provided, then this will return a list of all installed modules.
     If an id is provided, then this will list the contents of that modules.
     ''')
-    parser_list.add_argument("-s","--saves",action="store_true",help="List saves rather than workshop files.")
+    group_list=parser_list.add_mutually_exclusive_group()
+    group_list.add_argument("-w","--workshop",action="store_true",help="List workshop files (the default).")
+    group_list.add_argument("-s","--save",action="store_true",help="List saves.")
+    group_list.add_argument("-c","--chest",action="store_true",help="List chest files.")
+
     parser_list.add_argument("id",nargs='?',help="ID of specific mod to list details of.")
     parser_list.set_defaults(func=self.do_list)
 
@@ -31,6 +35,7 @@ class TTS_CLI:
     group_export=parser_export.add_mutually_exclusive_group()
     group_export.add_argument("-w","--workshop",action="store_true",help="ID is of workshop file.")
     group_export.add_argument("-s","--save",action="store_true",help="ID is of savegame file.")
+    group_export.add_argument("-c","--chest",action="store_true",help="ID is of chest file.")
     parser_export.add_argument("id",help="ID of mod/name of savegame to export.")
     parser_export.add_argument("-o","--output",help="Location/file to export to.")
     parser_export.add_argument("-f","--force",action="store_true",help="Force creation of export file.")
@@ -43,23 +48,25 @@ class TTS_CLI:
 
 
     args = parser.parse_args()
+
+    # default to workshop
+    args.save_type=tts.SaveType.workshop
+    if args.workshop:
+      args.save_type=tts.SaveType.workshop
+    if args.chest:
+      args.save_type=tts.SaveType.chest
+    if args.save:
+      args.save_type=tts.SaveType.save
+
     rc,message = args.func(args)
     if message:
       print(message)
     sys.exit(rc)
 
-
-  def list_saves(self):
-    result="Saved games:"
-    for (name,id) in tts.describe_save_files(self.filesystem):
+  def list_by_type(self,save_type):
+    result=""
+    for (name,id) in tts.describe_files_by_type(self.filesystem,save_type):
       result+="\n%s (%s)" % (name,id)
-    return 0,result
-
-
-  def list_installed(self):
-    result="Installed workshop files:"
-    for (name,id) in tts.describe_workshop_files(self.filesystem):
-      result += "\n%s (%s)" % (name,id)
     return 0,result
 
   def list_item(self,data,filename,ident):
@@ -73,11 +80,9 @@ class TTS_CLI:
   def do_list(self,args):
     rc=0
     result=None
+
     if not args.id:
-      if args.saves:
-        rc,result=self.list_saves()
-      else:
-        rc,result=self.list_installed()
+      rc,result=self.list_by_type(args.save_type)
     else:
       filename=self.filesystem.get_json_filename(args.id)
       data=tts.load_json_file(filename)
@@ -96,19 +101,15 @@ class TTS_CLI:
 
     data=None
     json_filename=None
-    isWorkshop=True
-    if args.workshop or not args.save:
-      json_filename=self.filesystem.get_workshop_filename(args.id)
-    if not json_filename and not args.workshop:
-      json_filename=self.filesystem.get_save_filename(args.id)
-      isWorkshop=False
+    if not args.save_type:
+      args.save_type=self.filesystem.get_json_filename_type(args.id)
+    if not args.save_type:
+      return 1,"Unable to determine type of id %s" % args.id
 
-    if args.save:
-      json_filename=self.filesystem.get_save_filename(args.id)
-
+    json_filename=self.filesystem.get_json_filename_for_type(args.id,args.save_type)
 
     if not json_filename:
-      return 1, "Unable to find filename for id %s (wrong -s/-w specified?)" % args.id
+      return 1, "Unable to find filename for id %s (wrong -s/-w/-c specified?)" % args.id
     data=tts.load_json_file(json_filename)
     if not data:
       return 1, "Unable to load data for file %s" % json_filename
@@ -116,7 +117,7 @@ class TTS_CLI:
     save=tts.Save(savedata=data,
                   filename=json_filename,
                   ident=args.id,
-                  isWorkshop=isWorkshop,
+                  save_type=args.save_type,
                   filesystem=self.filesystem)
     if not save.isInstalled:
       return 1, "Unable to find all urls required by %s\n%s" % (args.id,save)

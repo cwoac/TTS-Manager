@@ -13,16 +13,22 @@ class SaveBrowser():
     srcFrame=ttk.Frame(master)
     srcFrame.pack()
     ttk.Label(srcFrame,text="Select list source:").pack()
-    self.isSaves=Tk.BooleanVar()
+    self.save_type=Tk.IntVar()
+    self.save_type.set(int(tts.SaveType.workshop))
     ttk.Radiobutton(srcFrame,
                    text="Workshop",
-                   variable=self.isSaves,
-                   value=False,
+                   variable=self.save_type,
+                   value=int(tts.SaveType.workshop),
                    command=self.list_command).pack(side=Tk.LEFT)
     ttk.Radiobutton(srcFrame,
                    text="Save",
-                   variable=self.isSaves,
-                   value=True,
+                   variable=self.save_type,
+                   value=int(tts.SaveType.save),
+                   command=self.list_command).pack(side=Tk.LEFT)
+    ttk.Radiobutton(srcFrame,
+                   text="Chest",
+                   variable=self.save_type,
+                   value=int(tts.SaveType.chest),
                    command=self.list_command).pack(side=Tk.LEFT)
     scrollFrame=ttk.Frame(master)
     scrollFrame.pack(expand=1,fill=Tk.BOTH)
@@ -38,11 +44,7 @@ class SaveBrowser():
 
   def list_command(self):
     """ Populates the list box"""
-    data=None
-    if self.isSaves.get():
-      data=tts.describe_save_files(self.filesystem)
-    else:
-      data=tts.describe_workshop_files(self.filesystem)
+    data=tts.describe_files_by_type(self.filesystem,self.save_type.get())
     self.file_list.delete(0,Tk.END)
     self.file_store={}
     i=0
@@ -63,17 +65,13 @@ class SaveBrowser():
     if not now:
       return
     ident=self.file_store[now[0]]
-    filename=None
-    if self.isSaves.get():
-      filename=self.filesystem.get_save_filename(ident)
-    else:
-      filename=self.filesystem.get_workshop_filename(ident)
+    filename=self.filesystem.get_json_filename_for_type(ident,self.save_type.get())
     data=tts.load_json_file(filename)
     # TODO: error handling
     save=tts.Save(savedata=data,
                   ident=ident,
                   filename=filename,
-                  isWorkshop=not self.isSaves.get(),
+                  save_type=tts.SaveType(self.save_type.get()),
                   filesystem=self.filesystem)
     self.poll_command(save)
 

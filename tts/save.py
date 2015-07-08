@@ -63,10 +63,10 @@ def get_save_urls(savedata):
 
 
 class Save:
-  def __init__(self,savedata,filename,ident,isWorkshop=True,filesystem=get_default_fs()):
+  def __init__(self,savedata,filename,ident,save_type=SaveType.workshop,filesystem=get_default_fs()):
     self.data = savedata
     self.ident=ident
-    self.isWorkshop=isWorkshop
+    self.save_type=save_type
     self.filesystem = filesystem
     self.filename=filename
     self.urls = [ Url(url,self.filesystem) for url in get_save_urls(savedata) ]
@@ -78,16 +78,13 @@ class Save:
     zipComment = {
       "Ver":1,
       "Id":self.ident,
-      "Type":"Workshop" if self.isWorkshop else "Save"
+      "Type":self.save_type.name
     }
 
     # TODO: error checking.
     with zipfile.ZipFile(export_filename,'w') as zf:
       zf.comment=json.dumps(zipComment).encode('utf-8')
-      if self.isWorkshop:
-        zf.write(self.filename,zfs.get_workshop_path(os.path.basename(self.filename)))
-      else:
-        zf.write(self.filename,zfs.get_save_path(os.path.basename(self.filename)))
+      zf.write(self.filename,zfs.get_path_by_type(os.path.basename(self.filename),self.save_type))
       for url in self.models:
         zf.write(url.location,zfs.get_model_path(os.path.basename(url.location)))
       for url in self.images:
