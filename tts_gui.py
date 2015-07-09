@@ -136,9 +136,9 @@ class TTS_GUI:
 
   def exportPak(self):
     if not self.export_savedata.isInstalled:
-      successful, msg = self.export_savedata.download()
+      successful = self.export_savedata.download()
       if not successful:
-        messagebox.showinfo("TTS Manager","Export failed:\n%s" % msg)
+        messagebox.showinfo("TTS Manager","Export failed (see log)")
         return
     self.export_savedata.export(self.export_filename)
     messagebox.showinfo("TTS Manager","Export Done.")
@@ -218,6 +218,13 @@ class TTS_GUI:
     mode_notebook.add(export_frame,text="Export")
     mode_notebook.add(import_frame,text="Import")
     mode_notebook.pack(expand=1,fill="both")
+
+    logger_frame=ttk.Frame(root)
+    logger_frame.pack(fill=Tk.X,expand=Tk.Y)
+    ttk.Label(logger_frame,text="Log:").pack()
+    logger=ScrolledText.ScrolledText(logger_frame,state=Tk.DISABLED,height=10,)
+    logger.pack(fill=Tk.BOTH,expand=Tk.Y)
+    tts.setLoggerConsole(logger)
 
 def main():
   root = Tk.Tk()

@@ -12,22 +12,23 @@ class TKHandler(logging.Handler):
 
     if self.console:
       self.console.configure(state=tkinter.NORMAL)
-      self.console.insert(tkinter.END, formattedMessage)
+      self.console.insert(tkinter.END, formattedMessage+'\n')
       self.console.configure(state=tkinter.DISABLED)
       self.console.see(tkinter.END)
+      self.console.update()
     print(formattedMessage)
 
 
 _logger  = logging.getLogger("TTS Logger")
 _handler = TKHandler()
-_handler.setLevel(logging.DEBUG)
 _formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
 _handler.setFormatter(_formatter)
 _logger.addHandler(_handler)
-
+_handler.setLevel(logging.DEBUG)
+_logger.setLevel(logging.DEBUG)
 def logger():
   return _logger
 
-def setConsole(console):
+def setLoggerConsole(console):
   _handler.console=console
 
