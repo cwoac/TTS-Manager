@@ -3,6 +3,7 @@ from .url import Url
 import tts
 import zipfile
 import json
+import urllib.error
 
 def importPak(filesystem,filename):
   if not os.path.isfile(filename):
@@ -70,8 +71,9 @@ class Save:
     self.filesystem = filesystem
     self.filename=filename
     self.urls = [ Url(url,self.filesystem) for url in get_save_urls(savedata) ]
-    self.models=[ x for x in self.urls if not x.isImage ]
-    self.images=[ x for x in self.urls if x.isImage ]
+    self.missing = [ x for x in self.urls if not x.exists ]
+    self.models=[ x for x in self.urls if x.exists and x.isImage ]
+    self.images=[ x for x in self.urls if x.exists and not x.isImage ]
 
   def export(self,export_filename):
     zfs = tts.filesystem.FileSystem("")
@@ -94,18 +96,32 @@ class Save:
   @property
   def isInstalled(self):
     """Is every url referenced by this save installed?"""
-    for url in self.urls:
-      if not url.exists:
-        return False
-    return True
+    return len(self.missing)==0
+
+  def download(self):
+    if self.isInstalled==True:
+      return True, "All files already downloaded."
+
+    for url in self.missing:
+      result,response = url.download()
+      if not result:
+        return result,response
+
+    return True, "All files downloaded."
 
   def __str__(self):
     result = "Save: %s\n" % self.data['SaveName']
-    result += "Images:\n"
-    for x in self.images:
-      result += str(x)+"\n"
-    result += "Models:\n"
-    for x in self.models:
-      result += str(x)+"\n"
+    if len(self.missing)>0:
+      result += "Missing:\n"
+      for x in self.missing:
+        result += str(x)+"\n"
+    if len(self.images)>0:
+      result += "Images:\n"
+      for x in self.images:
+        result += str(x)+"\n"
+    if len(self.models)>0:
+      result += "Models:\n"
+      for x in self.models:
+        result += str(x)+"\n"
     return result
 __all__ = [ 'Save' ]

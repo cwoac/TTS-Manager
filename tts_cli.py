@@ -55,6 +55,14 @@ class TTS_CLI:
     parser_import.add_argument("file",help="Mod pak file to import.")
     parser_import.set_defaults(func=self.do_import)
 
+    # download command
+    parser_download = subparsers.add_parser('download',help='Download mod files.',description='Attempt to download any missing files for an installed mod.')
+    group_download=parser_download.add_mutually_exclusive_group()
+    group_download.add_argument("-w","--workshop",action="store_true",help="ID is of workshop file.")
+    group_download.add_argument("-s","--save",action="store_true",help="ID is of savegame file.")
+    group_download.add_argument("-c","--chest",action="store_true",help="ID is of chest file.")
+    parser_download.add_argument("id",help="ID of mod/name of savegame to download.")
+    parser_download.set_defaults(func=self.do_download)
 
     # cache command
     parser_cache = subparsers.add_parser('cache',help='Work with the cache')
@@ -69,8 +77,6 @@ class TTS_CLI:
       self.filesystem = tts.filesystem.FileSystem(os.path.abspath(args.directory))
     else:
       self.filesystem = tts.get_default_fs()
-
-
 
     rc,message = args.func(args)
     if message:
@@ -97,6 +103,40 @@ class TTS_CLI:
     save=tts.Save(savedata=data,ident=ident,filename=filename)
     return 0,save
 
+  def do_download(self,args):
+    rc=0
+    result=None
+    parse_save_type(args)
+
+    # TODO: refactor this into do_export
+    data=None
+    json_filename=None
+    if not args.save_type:
+      args.save_type=self.filesystem.get_json_filename_type(args.id)
+    if not args.save_type:
+      return 1,"Unable to determine type of id %s" % args.id
+
+    json_filename=self.filesystem.get_json_filename_for_type(args.id,args.save_type)
+
+    if not json_filename:
+      return 1, "Unable to find filename for id %s (wrong -s/-w/-c specified?)" % args.id
+    data=tts.load_json_file(json_filename)
+    if not data:
+      return 1, "Unable to load data for file %s" % json_filename
+
+    save=tts.Save(savedata=data,
+                  filename=json_filename,
+                  ident=args.id,
+                  save_type=args.save_type,
+                  filesystem=self.filesystem)
+    if save.isInstalled:
+      return 0, "All files already downloaded."
+
+    successful, msg = save.download()
+    if successful:
+      return 0, msg
+    else:
+      return 1, "Some files failed to download:\n%s" % msg
 
   def do_list(self,args):
     rc=0
