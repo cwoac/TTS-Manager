@@ -37,7 +37,11 @@ class SaveBrowser():
     self.file_list=Tk.Listbox(scrollFrame,yscrollcommand=foundBar.set)
     foundBar.config(command=self.file_list.yview)
     foundBar.pack(side=Tk.RIGHT,fill=Tk.Y)
-    self.file_list.pack(side=Tk.LEFT,fill=Tk.BOTH,expand=1)
+    self.file_list.pack(side=Tk.LEFT,fill=Tk.BOTH,expand=Tk.Y)
+    statusFrame=ttk.Frame(master)
+    statusFrame.pack(expand=Tk.Y,fill=Tk.BOTH)
+    self.status_label=ttk.Label(statusFrame)
+    self.status_label.pack(fill=Tk.BOTH,expand=Tk.Y)
     self.poll_command=poll_command
     self.file_list_current = None
     self.poll_file_list()
@@ -73,6 +77,10 @@ class SaveBrowser():
                   filename=filename,
                   save_type=tts.SaveType(self.save_type.get()),
                   filesystem=self.filesystem)
+    if save.isInstalled:
+      self.status_label.config(text="All files found.")
+    else:
+      self.status_label.config(text="Some files missing.")
     self.poll_command(save)
 
 
