@@ -7,7 +7,7 @@ Currently this code is rather alpha quality; there is no failure recovery or pre
 
 Listing, export and import all should work. Note that old-style mods (`.cjc` files) are *not* supported.
 
-To export a mod, you must have downloaded *all* assets. Opening a mod in Tabletop Simulator is usually enough, but make sure you have taken something out of every bag in the mod. If anything is missing, then the tool will tell you.
+To export a mod, you ideally should have downloaded *all* assets. Opening a mod in Tabletop Simulator is usually enough, but make sure you have taken something out of every bag in the mod. If anything is missing, then the tool will tell you. TTS Manager can attempt to download the files for you, but this feature is very new.
 
 ## Quickstart
 ### GUI
@@ -21,7 +21,6 @@ Either download a compiled exe, or run using python3.
 
 ## TODO
 These are primarily tracked on github, but roughly:
-- Downloading of missing data items.
 - Uninstalling paks
-- Error handling.
+- More error handling.
 - LOTS MORE TESTING.

@@ -48,6 +48,7 @@ class TTS_CLI:
     parser_export.add_argument("id",help="ID of mod/name of savegame to export.")
     parser_export.add_argument("-o","--output",help="Location/file to export to.")
     parser_export.add_argument("-f","--force",action="store_true",help="Force creation of export file.")
+    parser_export.add_argument("-d","--download",action="store_true",help="Attempt to download missing cache files. (EXPERIMENTAL)")
     parser_export.set_defaults(func=self.do_export)
 
     # import command
@@ -183,7 +184,15 @@ class TTS_CLI:
                   save_type=args.save_type,
                   filesystem=self.filesystem)
     if not save.isInstalled:
-      return 1, "Unable to find all urls required by %s\n%s" % (args.id,save)
+      if not args.download:
+        return 1, "Unable to find all urls required by %s. Rerun with -d to try and download them or open it within TTS.\n%s" % (args.id,save)
+      else:
+        print("Downloading missing files...")
+        successful, msg = save.download()
+        if successful:
+          print("Files downloaded successfully.")
+        else:
+          return 1, "Some files failed to download:\n%s" % msg
     if os.path.isfile(filename) and not args.force:
       return 1,"%s already exists. Please specify another file or use '-f'" % filename
     print("Exporting json file %s to %s" % (args.id,filename))

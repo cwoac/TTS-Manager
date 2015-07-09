@@ -80,7 +80,7 @@ class SaveBrowser():
     if save.isInstalled:
       self.status_label.config(text="All files found.")
     else:
-      self.status_label.config(text="Some files missing.")
+      self.status_label.config(text="Some cache files missing - check details on list page.")
     self.poll_command(save)
 
 
@@ -100,19 +100,19 @@ class TTS_GUI:
     self.list_sb.list_command()
 
   def update_export_frame_details(self,savedata):
+    self.export_savedata=savedata
     if savedata.isInstalled:
-      self.statusLabel.config(text="All cache files found. OK to export.")
+      self.downloadMissingFiles.set(False)
+      self.downloadMissingFilesCB.config(state=Tk.DISABLED)
       self.exportButton.config(state=Tk.NORMAL)
       self.targetEntry.delete(0,Tk.END)
       self.export_filename=os.path.join(os.path.expanduser("~"),"Downloads",savedata.ident+'.pak')
       self.targetEntry.insert(0,self.export_filename)
-      self.export_savedata=savedata
     else:
-      self.statusLabel.config(text="Some cache files missing - check details on list page.")
+      self.downloadMissingFilesCB.config(state=Tk.NORMAL)
       self.exportButton.config(state=Tk.DISABLED)
       self.export_filename=None
       self.targetEntry.delete(0,Tk.END)
-      self.export_savedata=None
 
   def pickExportTarget(self):
     self.export_filename = filedialog.asksaveasfilename(
@@ -135,6 +135,11 @@ class TTS_GUI:
     self.importEntry.insert(0,self.import_filename)
 
   def exportPak(self):
+    if not self.export_savedata.isInstalled:
+      successful, msg = self.export_savedata.download()
+      if not successful:
+        messagebox.showinfo("TTS Manager","Export failed:\n%s" % msg)
+        return
     self.export_savedata.export(self.export_filename)
     messagebox.showinfo("TTS Manager","Export Done.")
 
@@ -143,21 +148,40 @@ class TTS_GUI:
     rc,message=tts.save.importPak(self.filesystem,self.import_filename)
     messagebox.showinfo("TTS Manager",message)
 
+  def toggleDownloadMissing(self):
+    if self.downloadMissingFiles.get():
+      self.exportButton.config(state=Tk.NORMAL)
+      self.targetEntry.delete(0,Tk.END)
+      self.export_filename=os.path.join(os.path.expanduser("~"),"Downloads",self.export_savedata.ident+'.pak')
+      self.targetEntry.insert(0,self.export_filename)
+    else:
+      self.exportButton.config(state=Tk.DISABLED)
+      self.export_filename=None
+      self.targetEntry.delete(0,Tk.END)
+
   def populate_export_frame(self,frame):
     self.export_sb=SaveBrowser(frame,self.update_export_frame_details,self.filesystem)
     targetFrame=ttk.Frame(frame)
-    targetFrame.pack(expand=1,fill="both")
+    targetFrame.pack(expand=Tk.Y,fill=Tk.BOTH)
+    self.downloadMissingFiles=Tk.BooleanVar()
+    self.downloadMissingFiles.set(False)
+    self.downloadMissingFilesCB=ttk.Checkbutton(targetFrame,
+                    text="Download missing files.",
+                    variable=self.downloadMissingFiles,
+                    offvalue=False,
+                    onvalue=True,
+                    state=Tk.DISABLED,
+                    command=self.toggleDownloadMissing)
+    self.downloadMissingFilesCB.pack()
     ttk.Label(targetFrame,text="Select output file").pack()
     self.targetEntry=ttk.Entry(targetFrame)
     self.targetEntry.pack(side=Tk.LEFT,expand=Tk.Y,fill=Tk.X)
-    targetButton=ttk.Button(targetFrame,text="Browse",command=self.pickExportTarget).pack(side=Tk.LEFT)
+    ttk.Button(targetFrame,text="Browse",command=self.pickExportTarget).pack(side=Tk.LEFT)
 
     exportFrame=ttk.Frame(frame)
     exportFrame.pack(expand=Tk.Y,fill=Tk.BOTH)
     self.export_filename=None
     self.export_savedata=None
-    self.statusLabel=ttk.Label(exportFrame,text="")
-    self.statusLabel.pack()
     self.exportButton=ttk.Button(exportFrame,text="Export",command=self.exportPak,state=Tk.DISABLED)
     self.exportButton.pack()
 

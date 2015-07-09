@@ -37,7 +37,6 @@ class Url:
     except urllib.error.URLError as e:
       return False,"Error downloading %s (%s)" % (self.url,e)
     data=response.read()
-    print(data)
     imagetype=imghdr.what('',data)
     filename=None
     if imagetype==None:
