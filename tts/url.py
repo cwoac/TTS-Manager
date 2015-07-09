@@ -26,33 +26,39 @@ class Url:
       self._looked_for_location=True
 
   def download(self):
+    log=tts.logger()
     if self.exists:
-      return True, ""
+      return True
     # TODO: proper error handling
+    log.info("Downloading data for %s." % self.url)
     user_agent = 'Mozilla/4.0 (compatible; MSIE 5.5; Windows NT)'
     headers = { 'User-Agent' : user_agent }
     request=urllib.request.Request(self.url,headers=headers)
     try:
       response=urllib.request.urlopen(request)
     except urllib.error.URLError as e:
-      return False,"Error downloading %s (%s)" % (self.url,e)
+      log.error("Error downloading %s (%s)" % (self.url,e))
+      return False
     data=response.read()
     imagetype=imghdr.what('',data)
     filename=None
     if imagetype==None:
       filename=self.filesystem.get_model_path(self.stripped_url+'.obj')
+      log.debug("File is OBJ")
     else:
       if imagetype=='jpeg':
         imagetype='jpg'
+      log.debug("File is %s" % imagetype)
       filename=self.filesystem.get_image_path(self.stripped_url+'.'+imagetype)
     try:
       fh=open(filename,'wb')
       fh.write(data)
       fh.close()
     except IOError as e:
-      return False, "Error writing file %s (%s)" % (filename,e)
+      log.error("Error writing file %s (%s)" % (filename,e))
+      return False
     self._looked_for_location=False
-    return True, ""
+    return True
 
   @property
   def exists(self):

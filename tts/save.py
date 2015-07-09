@@ -76,6 +76,8 @@ class Save:
     self.images=[ x for x in self.urls if x.exists and not x.isImage ]
 
   def export(self,export_filename):
+    log=tts.logger()
+    log.info("About to export %s to %s" % (self.ident,export_filename))
     zfs = tts.filesystem.FileSystem("")
     zipComment = {
       "Ver":1,
@@ -91,7 +93,7 @@ class Save:
         zf.write(url.location,zfs.get_model_path(os.path.basename(url.location)))
       for url in self.images:
         zf.write(url.location,zfs.get_image_path(os.path.basename(url.location)))
-
+    log.info("File exported.")
 
   @property
   def isInstalled(self):
@@ -99,15 +101,19 @@ class Save:
     return len(self.missing)==0
 
   def download(self):
+    log=tts.logger()
+    log.info("About to download files for %s" % self.ident)
     if self.isInstalled==True:
-      return True, "All files already downloaded."
+      log.info("All files already downloaded.")
+      return True
 
     for url in self.missing:
-      result,response = url.download()
+      result = url.download()
       if not result:
-        return result,response
+        return False
 
-    return True, "All files downloaded."
+    log.info("All files downloaded.")
+    return True
 
   def __str__(self):
     result = "Save: %s\n" % self.data['SaveName']

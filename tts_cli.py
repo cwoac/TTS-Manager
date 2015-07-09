@@ -133,11 +133,11 @@ class TTS_CLI:
     if save.isInstalled:
       return 0, "All files already downloaded."
 
-    successful, msg = save.download()
+    successful = save.download()
     if successful:
-      return 0, msg
+      return 0, "All files downloaded."
     else:
-      return 1, "Some files failed to download:\n%s" % msg
+      return 1, "Some files failed to download."
 
   def do_list(self,args):
     rc=0
@@ -188,11 +188,11 @@ class TTS_CLI:
         return 1, "Unable to find all urls required by %s. Rerun with -d to try and download them or open it within TTS.\n%s" % (args.id,save)
       else:
         print("Downloading missing files...")
-        successful, msg = save.download()
+        successful = save.download()
         if successful:
           print("Files downloaded successfully.")
         else:
-          return 1, "Some files failed to download:\n%s" % msg
+          return 1, "Some files failed to download"
     if os.path.isfile(filename) and not args.force:
       return 1,"%s already exists. Please specify another file or use '-f'" % filename
     print("Exporting json file %s to %s" % (args.id,filename))
