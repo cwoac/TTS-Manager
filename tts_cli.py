@@ -11,9 +11,8 @@ import zipfile
 
 class TTS_CLI:
   def __init__(self):
-    self.filesystem = tts.get_default_fs()
-
     parser = argparse.ArgumentParser(description="Manipulate Tabletop Simulator files")
+    parser.add_argument("-d","--directory",help="Override TTS cache directory")
     subparsers = parser.add_subparsers(dest='parser',title='command',description='Valid commands.')
     subparsers.required=True
     # add list command
@@ -48,6 +47,12 @@ class TTS_CLI:
 
 
     args = parser.parse_args()
+
+    #
+    if args.directory:
+      self.filesystem = tts.filesystem.FileSystem(args.directory)
+    else:
+      self.filesystem = tts.get_default_fs()
 
     # default to workshop
     args.save_type=tts.SaveType.workshop
