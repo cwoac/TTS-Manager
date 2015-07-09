@@ -9,6 +9,16 @@ import _io
 import json
 import zipfile
 
+def parse_save_type(args):
+  # default to workshop
+  args.save_type=tts.SaveType.workshop
+  if args.workshop:
+    args.save_type=tts.SaveType.workshop
+  if args.chest:
+    args.save_type=tts.SaveType.chest
+  if args.save:
+    args.save_type=tts.SaveType.save
+
 class TTS_CLI:
   def __init__(self):
     parser = argparse.ArgumentParser(description="Manipulate Tabletop Simulator files")
@@ -46,27 +56,33 @@ class TTS_CLI:
     parser_import.set_defaults(func=self.do_import)
 
 
+    # cache command
+    parser_cache = subparsers.add_parser('cache',help='Work with the cache')
+    subparsers_cache = parser_cache.add_subparsers(dest='parser_cache',title='cache_command',description='Valid sub-commands.')
+    subparsers_cache.required = True
+    parser_cache_create = subparsers_cache.add_parser('create',help='(re)create cache directory')
+    parser_cache_create.set_defaults(func=self.do_cache_create)
     args = parser.parse_args()
 
     #
     if args.directory:
-      self.filesystem = tts.filesystem.FileSystem(args.directory)
+      self.filesystem = tts.filesystem.FileSystem(os.path.abspath(args.directory))
     else:
       self.filesystem = tts.get_default_fs()
 
-    # default to workshop
-    args.save_type=tts.SaveType.workshop
-    if args.workshop:
-      args.save_type=tts.SaveType.workshop
-    if args.chest:
-      args.save_type=tts.SaveType.chest
-    if args.save:
-      args.save_type=tts.SaveType.save
+
 
     rc,message = args.func(args)
     if message:
       print(message)
     sys.exit(rc)
+
+  def do_cache_create(self,args):
+    try:
+      self.filesystem.create_dirs()
+    except OSError as exception:
+      return 1,"OS error: {0}".format(exception)
+    return 0,"All directories created OK."
 
   def list_by_type(self,save_type):
     result=""
@@ -85,6 +101,7 @@ class TTS_CLI:
   def do_list(self,args):
     rc=0
     result=None
+    parse_save_type(args)
 
     if not args.id:
       rc,result=self.list_by_type(args.save_type)
@@ -96,6 +113,7 @@ class TTS_CLI:
 
   def do_export(self,args):
     filename=None
+    parse_save_type(args)
     if args.output:
       if os.path.isdir(args.output):
         filename=os.path.join(args.output,args.id+".pak")

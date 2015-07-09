@@ -23,6 +23,11 @@ class FileSystem:
     }
     return st[save_type]
 
+  def create_dirs(self):
+    """Attempt to create any missing directories."""
+    for dir in [ self._saves, self._chest, self._mods, self._images, self._models, self._workshop ]:
+      os.makedirs(dir,exist_ok=True)
+
   @property
   def saves_dir(self):
     return self._saves
