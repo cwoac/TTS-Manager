@@ -187,15 +187,15 @@ class TTS_CLI:
       if not args.download:
         return 1, "Unable to find all urls required by %s. Rerun with -d to try and download them or open it within TTS.\n%s" % (args.id,save)
       else:
-        print("Downloading missing files...")
+        tts.logger().info("Downloading missing files...")
         successful = save.download()
         if successful:
-          print("Files downloaded successfully.")
+          tts.logger().info("Files downloaded successfully.")
         else:
           return 1, "Some files failed to download"
     if os.path.isfile(filename) and not args.force:
       return 1,"%s already exists. Please specify another file or use '-f'" % filename
-    print("Exporting json file %s to %s" % (args.id,filename))
+    tts.logger().info("Exporting json file %s to %s" % (args.id,filename))
     save.export(filename)
     # TODO: exception handling
     return 0,"Exported %s to %s" % (args.id,filename)
