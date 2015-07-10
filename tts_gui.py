@@ -5,6 +5,7 @@ import tkinter.filedialog as filedialog
 import tkinter.messagebox as messagebox
 import tkinter.scrolledtext as ScrolledText
 import os.path
+import logging
 
 class SaveBrowser():
   def __init__(self,master,poll_command,filesystem):
@@ -201,6 +202,11 @@ class TTS_GUI:
     ttk.Button(importFrame,text="Import",command=self.importPak).pack()
 
 
+  def change_log_level(self,event):
+    levels=[logging.DEBUG,logging.INFO,logging.WARN,logging.ERROR]
+    tts.logger().info("Setting log level to %s" % levels[self.loggerLevel.current()])
+    tts.logger().setLevel(levels[self.loggerLevel.current()])
+
 
 
   def __init__(self,root):
@@ -221,9 +227,15 @@ class TTS_GUI:
 
     logger_frame=ttk.Frame(root)
     logger_frame.pack(fill=Tk.X,expand=Tk.Y)
-    ttk.Label(logger_frame,text="Log:").pack()
-    logger=ScrolledText.ScrolledText(logger_frame,state=Tk.DISABLED,height=10,)
-    logger.pack(fill=Tk.BOTH,expand=Tk.Y)
+    ttk.Label(logger_frame,text="Log:").pack(side=Tk.LEFT)
+    self.loggerLevel=ttk.Combobox(logger_frame,state="readonly",value=['debug','infomation','warning','error'])
+    self.loggerLevel.current(1)
+    self.loggerLevel.bind("<<ComboboxSelected>>",self.change_log_level)
+    self.loggerLevel.pack(side=Tk.LEFT)
+    log_frame=ttk.Frame(root)
+    log_frame.pack(fill=Tk.X,expand=Tk.Y)
+    logger=ScrolledText.ScrolledText(log_frame,state=Tk.DISABLED,height=5,)
+    logger.pack(fill=Tk.BOTH,expand=Tk.Y,side=Tk.BOTTOM)
     tts.setLoggerConsole(logger)
 
 def main():
