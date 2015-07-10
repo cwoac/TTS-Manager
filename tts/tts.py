@@ -1,6 +1,8 @@
 import os.path
 import string
 import json
+import tts.logger
+import tts.save
 from enum import IntEnum
 from .filesystem import FileSystem,standard_basepath
 
@@ -25,7 +27,6 @@ def validate_metadata(metadata):
 
 def load_json_file(filename):
   if not filename or not os.path.isfile(filename):
-    print("Unable to find mod file %s" % filename)
     return None
   data=open(filename,'r').read()
   j_data=json.loads(data)
@@ -42,3 +43,37 @@ def describe_files_by_type(filesystem,save_type):
     name=json['SaveName']
     output.append((name,filename))
   return output
+
+def download_file(filesystem,ident,save_type):
+  """Attempt to download all files for a given savefile"""
+  log=tts.logger()
+  log.info("Downloading %s file %s (from %s)" % (save_type.name,ident,filesystem))
+  filename=filesystem.get_json_filename_for_type(ident,save_type)
+  if not filename:
+    log.error("Unable to find data file.")
+    return False
+  try:
+    data=load_json_file(filename)
+  except IOError as e:
+    log.error("Unable to read data file %s (%s)" % (filename,e))
+    return False
+  if not data:
+    log.error("Unable to read data file %s" % filename)
+    return False
+
+  save=tts.Save(savedata=data,
+            filename=filename,
+            ident=ident,
+            save_type=save_type,
+            filesystem=filesystem)
+
+  if save.isInstalled:
+    log.info("All files already downloaded.")
+    return True
+
+  successful = save.download()
+  if successful:
+    log.info("All files downloaded.")
+  else:
+    log.info("Some files failed to download.")
+  return successful

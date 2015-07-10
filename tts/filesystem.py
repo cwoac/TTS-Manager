@@ -133,3 +133,6 @@ class FileSystem:
       return SaveType.chest
     # TODO: error handling here
     return None
+
+  def __str__(self):
+    return self.basepath

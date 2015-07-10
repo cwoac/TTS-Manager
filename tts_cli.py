@@ -9,16 +9,6 @@ import _io
 import json
 import zipfile
 
-def parse_save_type(args):
-  # default to workshop
-  args.save_type=tts.SaveType.workshop
-  if args.workshop:
-    args.save_type=tts.SaveType.workshop
-  if args.chest:
-    args.save_type=tts.SaveType.chest
-  if args.save:
-    args.save_type=tts.SaveType.save
-
 class TTS_CLI:
   def __init__(self):
     parser = argparse.ArgumentParser(description="Manipulate Tabletop Simulator files")
@@ -32,9 +22,9 @@ class TTS_CLI:
     If an id is provided, then this will list the contents of that modules.
     ''')
     group_list=parser_list.add_mutually_exclusive_group()
-    group_list.add_argument("-w","--workshop",action="store_true",help="List workshop files (the default).")
-    group_list.add_argument("-s","--save",action="store_true",help="List saves.")
-    group_list.add_argument("-c","--chest",action="store_true",help="List chest files.")
+    group_list.add_argument("-w","--workshop",action="store_const",metavar='save_type',dest='save_type',const=tts.SaveType.workshop,help="List workshop files (the default).")
+    group_list.add_argument("-s","--save",action="store_const",metavar='save_type',dest='save_type',const=tts.SaveType.save,help="List saves.")
+    group_list.add_argument("-c","--chest",action="store_const",metavar='save_type',dest='save_type',const=tts.SaveType.chest,help="List chest files.")
 
     parser_list.add_argument("id",nargs='?',help="ID of specific mod to list details of.")
     parser_list.set_defaults(func=self.do_list)
@@ -42,9 +32,9 @@ class TTS_CLI:
     # export command
     parser_export = subparsers.add_parser('export',help="Export a mod.",description='Export a mod in a format suitible for later import.')
     group_export=parser_export.add_mutually_exclusive_group()
-    group_export.add_argument("-w","--workshop",action="store_true",help="ID is of workshop file.")
-    group_export.add_argument("-s","--save",action="store_true",help="ID is of savegame file.")
-    group_export.add_argument("-c","--chest",action="store_true",help="ID is of chest file.")
+    group_export.add_argument("-w","--workshop",action="store_const",dest='save_type',metavar='save_type',const=tts.SaveType.workshop,help="ID is of workshop file (the default).")
+    group_export.add_argument("-s","--save",action="store_const",dest='save_type',metavar='save_type',const=tts.SaveType.save,help="ID is of savegame file.")
+    group_export.add_argument("-c","--chest",action="store_const",dest='save_type',metavar='save_type',const=tts.SaveType.chest,help="ID is of chest file.")
     parser_export.add_argument("id",help="ID of mod/name of savegame to export.")
     parser_export.add_argument("-o","--output",help="Location/file to export to.")
     parser_export.add_argument("-f","--force",action="store_true",help="Force creation of export file.")
@@ -59,10 +49,12 @@ class TTS_CLI:
     # download command
     parser_download = subparsers.add_parser('download',help='Download mod files.',description='Attempt to download any missing files for an installed mod.')
     group_download=parser_download.add_mutually_exclusive_group()
-    group_download.add_argument("-w","--workshop",action="store_true",help="ID is of workshop file.")
-    group_download.add_argument("-s","--save",action="store_true",help="ID is of savegame file.")
-    group_download.add_argument("-c","--chest",action="store_true",help="ID is of chest file.")
-    parser_download.add_argument("id",help="ID of mod/name of savegame to download.")
+    group_download.add_argument("-w","--workshop",action="store_const",dest='save_type',metavar='save_type',const=tts.SaveType.workshop,help="ID is of workshop file.")
+    group_download.add_argument("-s","--save",action="store_const",dest='save_type',metavar='save_type',const=tts.SaveType.save,help="ID is of savegame file.")
+    group_download.add_argument("-c","--chest",action="store_const",dest='save_type',metavar='save_type',const=tts.SaveType.chest,help="ID is of chest file.")
+    group_download_target=parser_download.add_mutually_exclusive_group(required=True)
+    group_download_target.add_argument("-a","--all",action="store_true",help="Download all.")
+    group_download_target.add_argument("id",nargs='?',help="ID of mod/name of savegame to download.")
     parser_download.set_defaults(func=self.do_download)
 
     # cache command
@@ -71,13 +63,19 @@ class TTS_CLI:
     subparsers_cache.required = True
     parser_cache_create = subparsers_cache.add_parser('create',help='(re)create cache directory')
     parser_cache_create.set_defaults(func=self.do_cache_create)
+
     args = parser.parse_args()
 
-    #
+    # load filesystem values
     if args.directory:
       self.filesystem = tts.filesystem.FileSystem(os.path.abspath(args.directory))
     else:
       self.filesystem = tts.get_default_fs()
+
+    if (args.parser=='list' or args.parser=='export') and not args.save_type:
+      # set default
+      args.save_type = tts.SaveType.workshop
+
 
     rc,message = args.func(args)
     if message:
@@ -105,35 +103,26 @@ class TTS_CLI:
     return 0,save
 
   def do_download(self,args):
-    rc=0
-    result=None
-    parse_save_type(args)
+    successful=True
+    if not args.all:
+      if not args.save_type:
+        args.save_type=self.filesystem.get_json_filename_type(args.id)
+      if not args.save_type:
+        return 1,"Unable to determine type of id %s" % args.id
+      successful = tts.download_file(self.filesystem,args.id,args.save_type)
+    else:
+      if args.save_type:
+        for ident in self.filesystem.get_filenames_by_type(args.save_type):
+          if not tts.download_file(self.filesystem,ident,args.save_type):
+            successful=False
+            break
+      else:
+        for save_type in tts.SaveType:
+          for ident in self.filesystem.get_filenames_by_type(save_type):
+            if not tts.download_file(self.filesystem,ident,save_type):
+              successful=False
+              break
 
-    # TODO: refactor this into do_export
-    data=None
-    json_filename=None
-    if not args.save_type:
-      args.save_type=self.filesystem.get_json_filename_type(args.id)
-    if not args.save_type:
-      return 1,"Unable to determine type of id %s" % args.id
-
-    json_filename=self.filesystem.get_json_filename_for_type(args.id,args.save_type)
-
-    if not json_filename:
-      return 1, "Unable to find filename for id %s (wrong -s/-w/-c specified?)" % args.id
-    data=tts.load_json_file(json_filename)
-    if not data:
-      return 1, "Unable to load data for file %s" % json_filename
-
-    save=tts.Save(savedata=data,
-                  filename=json_filename,
-                  ident=args.id,
-                  save_type=args.save_type,
-                  filesystem=self.filesystem)
-    if save.isInstalled:
-      return 0, "All files already downloaded."
-
-    successful = save.download()
     if successful:
       return 0, "All files downloaded."
     else:
@@ -142,7 +131,6 @@ class TTS_CLI:
   def do_list(self,args):
     rc=0
     result=None
-    parse_save_type(args)
 
     if not args.id:
       rc,result=self.list_by_type(args.save_type)
@@ -154,7 +142,6 @@ class TTS_CLI:
 
   def do_export(self,args):
     filename=None
-    parse_save_type(args)
     if args.output:
       if os.path.isdir(args.output):
         filename=os.path.join(args.output,args.id+".pak")
