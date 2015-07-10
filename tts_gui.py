@@ -8,7 +8,7 @@ import os.path
 import logging
 
 class SaveBrowser():
-  def __init__(self,master,poll_command,filesystem):
+  def __init__(self,master,filesystem):
     self.filesystem = filesystem
     self.master=master
     srcFrame=ttk.Frame(master)
@@ -43,9 +43,11 @@ class SaveBrowser():
     statusFrame.pack(expand=Tk.Y,fill=Tk.BOTH)
     self.status_label=ttk.Label(statusFrame)
     self.status_label.pack(fill=Tk.BOTH,expand=Tk.Y)
-    self.poll_command=poll_command
     self.file_list_current = None
     self.poll_file_list()
+
+  def bind(self,event,function):
+    self.file_list.bind(event,function)
 
   def list_command(self):
     """ Populates the list box"""
@@ -73,35 +75,36 @@ class SaveBrowser():
     filename=self.filesystem.get_json_filename_for_type(ident,self.save_type.get())
     data=tts.load_json_file(filename)
     # TODO: error handling
-    save=tts.Save(savedata=data,
+    self.save=tts.Save(savedata=data,
                   ident=ident,
                   filename=filename,
                   save_type=tts.SaveType(self.save_type.get()),
                   filesystem=self.filesystem)
-    if save.isInstalled:
+    if self.save.isInstalled:
       self.status_label.config(text="All files found.")
     else:
       self.status_label.config(text="Some cache files missing - check details on list page.")
-    self.poll_command(save)
+    self.file_list.event_generate("<<SelectionChange>>")
 
 
 class TTS_GUI:
-  def update_list_frame_details(self,savedata):
+  def update_list_frame_details(self,event):
     self.details_list.config(state=Tk.NORMAL)
     self.details_list.delete(1.0,Tk.END)
-    self.details_list.insert(Tk.END,savedata)
+    self.details_list.insert(Tk.END,self.list_sb.save)
     self.details_list.config(state=Tk.DISABLED)
 
   def populate_list_frame(self,frame):
-    self.list_sb=SaveBrowser(frame,self.update_list_frame_details,self.filesystem)
+    self.list_sb=SaveBrowser(frame,self.filesystem)
+    self.list_sb.bind("<<SelectionChange>>",self.update_list_frame_details)
     ttk.Label(frame,text="Details:").pack()
     self.details_list=ScrolledText.ScrolledText(master=frame,height=5)
     self.details_list.config(state=Tk.DISABLED)
     self.details_list.pack(fill=Tk.BOTH, expand=Tk.Y)
     self.list_sb.list_command()
 
-  def update_export_frame_details(self,savedata):
-    self.export_savedata=savedata
+  def update_export_frame_details(self,event):
+    self.export_savedata=self.export_sb.save
     if savedata.isInstalled:
       self.downloadMissingFiles.set(False)
       self.downloadMissingFilesCB.config(state=Tk.DISABLED)
@@ -161,7 +164,8 @@ class TTS_GUI:
       self.targetEntry.delete(0,Tk.END)
 
   def populate_export_frame(self,frame):
-    self.export_sb=SaveBrowser(frame,self.update_export_frame_details,self.filesystem)
+    self.export_sb=SaveBrowser(frame,self.filesystem)
+    self.export_sb.bind("<<SelectionChange>>",self.update_export_frame_details)
     targetFrame=ttk.Frame(frame)
     targetFrame.pack(expand=Tk.Y,fill=Tk.BOTH)
     self.downloadMissingFiles=Tk.BooleanVar()
@@ -201,8 +205,8 @@ class TTS_GUI:
     importFrame.pack(expand=Tk.Y,fill=Tk.BOTH)
     ttk.Button(importFrame,text="Import",command=self.importPak).pack()
 
-  def update_download_frame_details(self,savedata):
-    if savedata.isInstalled:
+  def update_download_frame_details(self,event):
+    if self.download_sb.save.isInstalled:
       self.downloadButton.config(state=Tk.DISABLED)
       self.download_savedata=None
     else:
@@ -228,8 +232,10 @@ class TTS_GUI:
       messagebox.showinfo("TTS Manager","All files downloaded successfully.")
     else:
       messagebox.showinfo("TTS Manager","Some downloads failed (see log).")
+
   def populate_download_frame(self,frame):
-    self.download_sb=SaveBrowser(frame,self.update_download_frame_details,self.filesystem)
+    self.download_sb=SaveBrowser(frame,self.filesystem)
+    self.download_sb.bind("<<SelectionChange>>",self.update_download_frame_details)
     self.downloadButton=ttk.Button(frame,text="Download",command=self.download)
     self.downloadButton.pack()
     downloadAllButton=ttk.Button(frame,text="Download All",command=self.download_all).pack()
