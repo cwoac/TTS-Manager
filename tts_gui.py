@@ -208,7 +208,6 @@ class TTS_GUI:
     tts.logger().setLevel(levels[self.loggerLevel.current()])
 
 
-
   def __init__(self,root):
     self.root=root
     self.filesystem=tts.get_default_fs()

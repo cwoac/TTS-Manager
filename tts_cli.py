@@ -8,11 +8,13 @@ import locale
 import _io
 import json
 import zipfile
+import logging
 
 class TTS_CLI:
   def __init__(self):
     parser = argparse.ArgumentParser(description="Manipulate Tabletop Simulator files")
     parser.add_argument("-d","--directory",help="Override TTS cache directory")
+    parser.add_argument("-l","--loglevel",help="Set logging level",choices=['debug','info','warn','error'])
     subparsers = parser.add_subparsers(dest='parser',title='command',description='Valid commands.')
     subparsers.required=True
     # add list command
@@ -65,6 +67,18 @@ class TTS_CLI:
     parser_cache_create.set_defaults(func=self.do_cache_create)
 
     args = parser.parse_args()
+
+    # set logging
+    if args.loglevel:
+      logmap={
+        'debug':logging.DEBUG,
+        'info':logging.INFO,
+        'warn':logging.WARN,
+        'error':logging.ERROR
+       }
+      tts.logger().setLevel(logmap[args.loglevel])
+    else:
+      tts.logger().setLevel(logging.INFO)
 
     # load filesystem values
     if args.directory:
