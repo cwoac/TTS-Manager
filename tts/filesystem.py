@@ -88,12 +88,14 @@ class FileSystem:
 
   def get_save_filenames(self):
     files=self.get_filenames_in(self._saves)
-    files.remove('SaveFileInfos')
+    if files and 'SaveFileInfos' in files:
+      files.remove('SaveFileInfos')
     return files
 
   def get_workshop_filenames(self):
     files=self.get_filenames_in(self._workshop)
-    files.remove('WorkshopFileInfos')
+    if files and  'WorkshopFileInfos' in files:
+      files.remove('WorkshopFileInfos')
     return files
 
   def get_chest_filenames(self):
