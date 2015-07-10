@@ -201,6 +201,39 @@ class TTS_GUI:
     importFrame.pack(expand=Tk.Y,fill=Tk.BOTH)
     ttk.Button(importFrame,text="Import",command=self.importPak).pack()
 
+  def update_download_frame_details(self,savedata):
+    if savedata.isInstalled:
+      self.downloadButton.config(state=Tk.DISABLED)
+      self.download_savedata=None
+    else:
+      self.downloadButton.config(state=Tk.NORMAL)
+      self.download_savedata=savedata
+
+  def download(self):
+    if self.download_savedata.download():
+      messagebox.showinfo("TTS Manager","Download done.")
+    else:
+      messagebox.showinfo("TTS Manager","Download failed (see log).")
+
+  def download_all(self):
+    successful=True
+    save_type={1:tts.SaveType.workshop,
+               2:tts.SaveType.save,
+               3:tts.SaveType.chest}[self.download_sb.save_type.get()]
+    for ident in self.download_sb.file_store.values():
+      successful = tts.download_file(self.filesystem,ident,save_type)
+      if not successful:
+        break
+    if successful:
+      messagebox.showinfo("TTS Manager","All files downloaded successfully.")
+    else:
+      messagebox.showinfo("TTS Manager","Some downloads failed (see log).")
+  def populate_download_frame(self,frame):
+    self.download_sb=SaveBrowser(frame,self.update_download_frame_details,self.filesystem)
+    self.downloadButton=ttk.Button(frame,text="Download",command=self.download)
+    self.downloadButton.pack()
+    downloadAllButton=ttk.Button(frame,text="Download All",command=self.download_all).pack()
+    self.download_sb.list_command()
 
   def change_log_level(self,event):
     levels=[logging.DEBUG,logging.INFO,logging.WARN,logging.ERROR]
@@ -218,10 +251,13 @@ class TTS_GUI:
     self.populate_export_frame(export_frame)
     import_frame = ttk.Frame(mode_notebook)
     self.populate_import_frame(import_frame)
+    download_frame = ttk.Frame(mode_notebook)
+    self.populate_download_frame(download_frame)
 
     mode_notebook.add(list_frame,text="List")
     mode_notebook.add(export_frame,text="Export")
     mode_notebook.add(import_frame,text="Import")
+    mode_notebook.add(download_frame,text="Download")
     mode_notebook.pack(expand=1,fill="both")
 
     logger_frame=ttk.Frame(root)
