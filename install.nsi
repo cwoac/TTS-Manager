@@ -1,7 +1,7 @@
 !include "MUI2.nsh"
 
 # name the installer
-!define VERSION "v0.4.0"
+!define VERSION "v0.4.1"
 Name "TTS Manager ${VERSION}"
 OutFile "Setup TTS Manager ${VERSION}.exe"
 
@@ -20,10 +20,10 @@ Var StartMenuFolder
 !insertmacro MUI_PAGE_DIRECTORY
 
 ;Start Menu Folder Page Configuration
-!define MUI_STARTMENUPAGE_REGISTRY_ROOT "HKCU" 
-!define MUI_STARTMENUPAGE_REGISTRY_KEY "Software\TTS Manager" 
+!define MUI_STARTMENUPAGE_REGISTRY_ROOT "HKCU"
+!define MUI_STARTMENUPAGE_REGISTRY_KEY "Software\TTS Manager"
 !define MUI_STARTMENUPAGE_REGISTRY_VALUENAME "Start Menu Folder"
- 
+
 !insertmacro MUI_PAGE_STARTMENU Application $StartMenuFolder
 
 !insertmacro MUI_PAGE_INSTFILES
@@ -44,19 +44,19 @@ Var StartMenuFolder
 
 Section "TTS Manager" SecBase
   SetOutPath "$INSTDIR"
-  
+
   File /r dist\*
   File /oname=readme.txt README.md
   File /oname=license.txt LICENSE
   WriteRegStr HKCU "Software\TTS Manager" "" $INSTDIR
 
  !insertmacro MUI_STARTMENU_WRITE_BEGIN Application
-    
+
     ;Create shortcuts
     CreateDirectory "$SMPROGRAMS\$StartMenuFolder"
     CreateShortcut "$SMPROGRAMS\$StartMenuFolder\TTS Manager.lnk" $INSTDIR\tts_gui.exe"
     CreateShortcut "$SMPROGRAMS\$StartMenuFolder\Uninstall.lnk" "$INSTDIR\Uninstall.exe"
-  
+
   !insertmacro MUI_STARTMENU_WRITE_END
 
 
@@ -77,10 +77,10 @@ Section "Uninstall"
   RMDir "$INSTDIR"
 
   !insertmacro MUI_STARTMENU_GETFOLDER Application $StartMenuFolder
-    
+
   Delete "$SMPROGRAMS\$StartMenuFolder\Uninstall.lnk"
   RMDir "$SMPROGRAMS\$StartMenuFolder"
-  
+
   DeleteRegKey /ifempty HKCU "Software\TTS Manager"
 SectionEnd
 
