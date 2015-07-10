@@ -10,11 +10,10 @@ Listing, export and import all should work. Note that old-style mods (`.cjc` fil
 To export a mod, you ideally should have downloaded *all* assets. Opening a mod in Tabletop Simulator is usually enough, but make sure you have taken something out of every bag in the mod. If anything is missing, then the tool will tell you. TTS Manager can attempt to download the files for you, but this feature is very new.
 
 ## Quickstart
-### GUI
-download `tts_gui.exe` from the [releases](https://github.com/cwoac/TTS-Manager/releases) and run it. Pick the action you want at the top.
+Download the installer from the [releases](https://github.com/cwoac/TTS-Manager/releases) and install it. Then run the gui from the created shortcut link.
 
 ### Command Line
-download `tts_cli.exe` from the [releases](https://github.com/cwoac/TTS-Manager/releases) and run it from a command window. Use `tts_cli list` to find the id number of the mod to export then `tts_cli export id` to create a `.pak` file. You can then import this into an install using `tts_cli import path/to/pakfile`. The commands have further options, use `-h` to find out.
+Run the installed `tts_cli.exe` from within a command window. Use `tts_cli list` to find the id number of the mod to export then `tts_cli export id` to create a `.pak` file. You can then import this into an install using `tts_cli import path/to/pakfile`. The commands have further options, use `-h` to find out.
 
 ## Requirements
 Either download a compiled exe, or run using python3.
