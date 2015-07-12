@@ -1,7 +1,7 @@
 !include "MUI2.nsh"
 
 # name the installer
-!define VERSION "v0.4.1"
+!define VERSION "v0.4.2"
 Name "TTS Manager ${VERSION}"
 OutFile "Setup TTS Manager ${VERSION}.exe"
 
