@@ -3,6 +3,7 @@ import string
 import json
 import tts.logger
 import tts.save
+import codecs
 from enum import IntEnum
 from .filesystem import FileSystem,standard_basepath
 
@@ -26,9 +27,27 @@ def validate_metadata(metadata):
   return 'Ver' in metadata and 'Id' in metadata and 'Type' in metadata
 
 def load_json_file(filename):
-  if not filename or not os.path.isfile(filename):
+  log=tts.logger()
+  if not filename:
+    log.warn("load_json_file called without filename")
     return None
-  data=open(filename,'r').read()
+  if not os.path.isfile(filename):
+    log.error("Unable to find requested file %s" % filename)
+    return None
+  log.info("loading json file %s" % filename)
+  encodings = ['utf-8', 'windows-1250', 'windows-1252', 'ansi']
+  data=None
+  for encoding in encodings:
+    try:
+      data=codecs.open(filename,'r',encoding).read()
+    except UnicodeDecodeError as e:
+      log.debug("Unable to parse in encoding %s." % encoding)
+    else:
+      log.debug("loaded using encoding %s." % encoding)
+      break
+  if not data:
+    log.error("Unable to find encoding for %s." % filename)
+    return None
   j_data=json.loads(data)
   return j_data
 
