@@ -118,6 +118,7 @@ class FileSystem:
       if os.path.isfile(filename):
         result=filename
         break
+    # TODO: error handling here
     return result
 
   def get_json_filename(self,basename):

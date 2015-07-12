@@ -4,7 +4,6 @@ import tkinter
 class TKHandler(logging.Handler):
   def __init__(self,console=None):
     logging.Handler.__init__(self)
-
     self.console = console # must be a text widget of some kind.
 
   def emit(self,message):

@@ -18,6 +18,7 @@ def importPak(filesystem,filename):
       return 1, "Unable to read pak header comment in %s." % filename
     print("Extracting %s pak for id %s (pak version %s)" % (metadata['Type'],metadata['Id'],metadata['Ver']))
     # TODO: handle exceptions
+    # TODO: handle mixed location saves
     zf.extractall(filesystem.basepath)
   return 0,"Imported %s" % filename
 
@@ -26,7 +27,6 @@ def get_save_urls(savedata):
   Iterate over all the values in the json file, building a (key,value) set of
   all the values whose key ends in "URL"
   '''
-  # TODO: handle duplicate list ids
   def parse_list(data):
     urls=set()
     for item in data:
