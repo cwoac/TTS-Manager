@@ -29,14 +29,19 @@ class Url:
     log=tts.logger()
     if self.exists:
       return True
-    log.info("Downloading data for %s." % self.url)
+    url=self.url
+    protocols=url.split('://')
+    if len(protocols)==1:
+      log.warn("Missing protocol for {}. Assuming http://.".format(url))
+      url = "http://" + url
+    log.info("Downloading data for %s." % url)
     user_agent = 'Mozilla/4.0 (compatible; MSIE 5.5; Windows NT)'
     headers = { 'User-Agent' : user_agent }
-    request=urllib.request.Request(self.url,headers=headers)
+    request=urllib.request.Request(url,headers=headers)
     try:
       response=urllib.request.urlopen(request)
     except urllib.error.URLError as e:
-      log.error("Error downloading %s (%s)" % (self.url,e))
+      log.error("Error downloading %s (%s)" % (url,e))
       return False
     data=response.read()
     imagetype=imghdr.what('',data)

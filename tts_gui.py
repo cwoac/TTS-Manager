@@ -104,13 +104,12 @@ class TTS_GUI:
     self.list_sb.list_command()
 
   def update_export_frame_details(self,event):
-    self.export_savedata=self.export_sb.save
-    if savedata.isInstalled:
+    if self.export_sb.save.isInstalled:
       self.downloadMissingFiles.set(False)
       self.downloadMissingFilesCB.config(state=Tk.DISABLED)
       self.exportButton.config(state=Tk.NORMAL)
       self.targetEntry.delete(0,Tk.END)
-      self.export_filename=os.path.join(os.path.expanduser("~"),"Downloads",savedata.ident+'.pak')
+      self.export_filename=os.path.join(os.path.expanduser("~"),"Downloads",self.export_sb.save.ident+'.pak')
       self.targetEntry.insert(0,self.export_filename)
     else:
       self.downloadMissingFilesCB.config(state=Tk.NORMAL)
@@ -139,12 +138,12 @@ class TTS_GUI:
     self.importEntry.insert(0,self.import_filename)
 
   def exportPak(self):
-    if not self.export_savedata.isInstalled:
-      successful = self.export_savedata.download()
+    if not self.export_sb.save.isInstalled:
+      successful = self.export_sb.save.download()
       if not successful:
         messagebox.showinfo("TTS Manager","Export failed (see log)")
         return
-    self.export_savedata.export(self.export_filename)
+    self.export_sb.save.export(self.export_filename)
     messagebox.showinfo("TTS Manager","Export Done.")
 
   def importPak(self):
@@ -156,7 +155,7 @@ class TTS_GUI:
     if self.downloadMissingFiles.get():
       self.exportButton.config(state=Tk.NORMAL)
       self.targetEntry.delete(0,Tk.END)
-      self.export_filename=os.path.join(os.path.expanduser("~"),"Downloads",self.export_savedata.ident+'.pak')
+      self.export_filename=os.path.join(os.path.expanduser("~"),"Downloads",self.export_sb.save.ident+'.pak')
       self.targetEntry.insert(0,self.export_filename)
     else:
       self.exportButton.config(state=Tk.DISABLED)
@@ -186,7 +185,6 @@ class TTS_GUI:
     exportFrame=ttk.Frame(frame)
     exportFrame.pack(expand=Tk.Y,fill=Tk.BOTH)
     self.export_filename=None
-    self.export_savedata=None
     self.exportButton=ttk.Button(exportFrame,text="Export",command=self.exportPak,state=Tk.DISABLED)
     self.exportButton.pack()
 
@@ -208,13 +206,15 @@ class TTS_GUI:
   def update_download_frame_details(self,event):
     if self.download_sb.save.isInstalled:
       self.downloadButton.config(state=Tk.DISABLED)
-      self.download_savedata=None
     else:
       self.downloadButton.config(state=Tk.NORMAL)
-      self.download_savedata=savedata
 
   def download(self):
-    if self.download_savedata.download():
+    if not self.download_sb.save:
+      tts.logger().warn("Internal error: no save when attempting to download")
+      messagebox.showinfo("TTS Manager","Download failed (see log).")
+      return
+    if self.download_sb.save.download():
       messagebox.showinfo("TTS Manager","Download done.")
     else:
       messagebox.showinfo("TTS Manager","Download failed (see log).")

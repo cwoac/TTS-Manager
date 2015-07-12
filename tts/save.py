@@ -67,6 +67,10 @@ class Save:
   def __init__(self,savedata,filename,ident,save_type=SaveType.workshop,filesystem=get_default_fs()):
     self.data = savedata
     self.ident=ident
+    if self.data['SaveName']:
+      self.save_name=self.data['SaveName']
+    else:
+      self.save_name=self.ident
     self.save_type=save_type
     self.filesystem = filesystem
     self.filename=filename
@@ -102,15 +106,23 @@ class Save:
 
   def download(self):
     log=tts.logger()
-    log.info("About to download files for %s" % self.ident)
+    log.warn("About to download files for %s" % self.save_name)
     if self.isInstalled==True:
       log.info("All files already downloaded.")
       return True
 
+    successful=True
+    url_counter=1
     for url in self.missing:
+      log.warn("Downloading file {} of {} for {}".format(url_counter,len(self.missing),self.save_name))
       result = url.download()
       if not result:
-        return False
+        successful=False
+      url_counter+=1
+
+    #TODO:: remove items from missing list.
+    return successful
+
 
     log.info("All files downloaded.")
     return True
