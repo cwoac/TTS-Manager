@@ -248,6 +248,7 @@ class TTS_GUI:
 
 
   def __init__(self,root):
+    tts.logger().setLevel(logging.WARN)
     self.root=root
     self.filesystem=tts.get_default_fs()
     mode_notebook = ttk.Notebook(root)
@@ -270,8 +271,8 @@ class TTS_GUI:
     logger_frame.pack(fill=Tk.X,expand=Tk.Y)
     ttk.Label(logger_frame,text="Log:").pack(side=Tk.LEFT)
     self.loggerLevel=ttk.Combobox(logger_frame,state="readonly",value=['debug','infomation','warning','error'])
-    self.loggerLevel.current(1)
     self.loggerLevel.bind("<<ComboboxSelected>>",self.change_log_level)
+    self.loggerLevel.current(2)
     self.loggerLevel.pack(side=Tk.LEFT)
     log_frame=ttk.Frame(root)
     log_frame.pack(fill=Tk.X,expand=Tk.Y)

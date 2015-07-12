@@ -78,7 +78,7 @@ class TTS_CLI:
        }
       tts.logger().setLevel(logmap[args.loglevel])
     else:
-      tts.logger().setLevel(logging.INFO)
+      tts.logger().setLevel(logging.WARN)
 
     # load filesystem values
     if args.directory:
