@@ -61,3 +61,5 @@ target/
 tts_scratch.py
 tts_gui*.zip
 setup*.exe
+*.swp
+*~
