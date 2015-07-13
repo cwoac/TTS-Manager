@@ -246,9 +246,14 @@ class TTS_GUI:
     tts.logger().info("Setting log level to %s" % levels[self.loggerLevel.current()])
     tts.logger().setLevel(levels[self.loggerLevel.current()])
 
+  def preferences(self):
+    r=tts.preferences.Preferences(self.root)
+    if r.result:
+      self.log.debug(r.result)
 
   def __init__(self,root):
-    tts.logger().setLevel(logging.WARN)
+    self.log=tts.logger()
+    self.log.setLevel(logging.WARN)
     self.root=root
     self.filesystem=tts.get_default_fs()
     mode_notebook = ttk.Notebook(root)
@@ -279,6 +284,11 @@ class TTS_GUI:
     logger=ScrolledText.ScrolledText(log_frame,state=Tk.DISABLED,height=5,)
     logger.pack(fill=Tk.BOTH,expand=Tk.Y,side=Tk.BOTTOM)
     tts.setLoggerConsole(logger)
+    pref_frame=ttk.Frame(root)
+    pref_frame.pack(fill=Tk.X,expand=Tk.Y)
+    ttk.Button(pref_frame,text="Preferences",command=self.preferences).pack()
+
+
 
 def main():
   root = Tk.Tk()
