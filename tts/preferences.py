@@ -118,6 +118,7 @@ class PreferencesDialog(simpledialog.Dialog):
     self.ttsLocationEntry.insert(0,self.preferences.TTSLocation)
     self.ttsLocationEntry.grid(row=4)
     ttk.Button(master,text="Browse",command=self.pickTTSDir).grid(row=4,column=1,sticky=Tk.E)
+    ttk.Label(master,text="If you have installed via Steam, this will be something like \"C:\\Program Files (x86)\\Steam\\steamapps\\common\\Tabletop Simulator").grid(row=5,columnspan=2)
 
   def pickTTSDir(self):
     self.preferences.TTSLocation=filedialog.askdirectory(

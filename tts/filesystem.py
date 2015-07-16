@@ -6,11 +6,18 @@ def standard_basepath():
   return os.path.join(os.path.expanduser("~"),"Documents","My Games","Tabletop Simulator")
 
 class FileSystem:
-  def __init__(self,basepath):
-    self.basepath=basepath
-    self._saves = os.path.join(basepath,"Saves")
+  def __init__(self,base_path=None,tts_install_path=None):
+    if base_path:
+      self.basepath=base_path
+    else:
+      self.basepath=standard_basepath()
+    if tts_install_path:
+      self.modpath=os.path.join(tts_install_path,"Tabletop Simulator_Data")
+    else:
+      self.modpath=self.basepath
+    self._saves = os.path.join(self.basepath,"Saves")
     self._chest = os.path.join(self._saves,"Chest")
-    self._mods  = os.path.join(basepath,"Mods")
+    self._mods  = os.path.join(self.modpath,"Mods")
     self._images= os.path.join(self._mods,"Images")
     self._models= os.path.join(self._mods,"Models")
     self._workshop = os.path.join(self._mods,"Workshop")
@@ -22,6 +29,14 @@ class FileSystem:
       tts.SaveType.chest:self._chest
     }
     return st[save_type]
+
+  def check_dirs(self):
+    """Do all the directories exist?"""
+    for dir in [ self._saves, self._chest, self._mods, self._images, self._models, self._workshop ]:
+      if not os.path.isdir(dir):
+        tts.logger().warn("TTS Dir missing: {}".format(dir))
+        return False
+    return True
 
   def create_dirs(self):
     """Attempt to create any missing directories."""
@@ -138,4 +153,4 @@ class FileSystem:
     return None
 
   def __str__(self):
-    return self.basepath
+    return "Saves: {}\nMods: {}".format(self.basepath,self.modpath)

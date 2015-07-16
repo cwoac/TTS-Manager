@@ -256,7 +256,15 @@ class TTS_GUI:
     self.log.setLevel(logging.WARN)
     self.preferences=tts.preferences.Preferences()
     self.root=root
-    self.filesystem=tts.get_default_fs()
+
+    if self.preferences.firstRun:
+      messagebox.showinfo("TTS Manager","First run detected.\nOpening prefences pane")
+      self.showPreferences()
+
+    if self.preferences.locationIsUser:
+      self.filesystem=tts.get_default_fs()
+    else:
+      self.filesystem=tts.filesystem.FileSystem(tts_install_path=self.preferences.TTSLocation)
     mode_notebook = ttk.Notebook(root)
     list_frame = ttk.Frame(mode_notebook)
     self.populate_list_frame(list_frame)
@@ -289,9 +297,6 @@ class TTS_GUI:
     pref_frame.pack(fill=Tk.X,expand=Tk.Y)
     ttk.Button(pref_frame,text="Preferences",command=self.showPreferences).pack()
 
-    if self.preferences.firstRun:
-      messagebox.showinfo("TTS Manager","First run detected.\nOpening prefences pane")
-      self.showPreferences()
 
 def main():
   root = Tk.Tk()
