@@ -10,7 +10,7 @@ class Preferences(simpledialog.Dialog):
     self.registry=winreg.OpenKey( self.connection, "Software\TTS Manager",0,winreg.KEY_ALL_ACCESS )
     locationFrame=ttk.Frame(master)
     locationFrame.pack()
-    ttk.Label(locationFrame,text="Mod Save Location:")
+    ttk.Label(locationFrame,text="Mod Save Location:").pack()
     self.locationIsUser=Tk.BooleanVar()
     self.locationIsUser.set(True)
     try:
@@ -26,6 +26,16 @@ class Preferences(simpledialog.Dialog):
                     text="Game Data",
                     variable=self.locationIsUser,
                     value=False).pack(side=Tk.LEFT)
+
+    ttsFrame=ttk.Frame(master)
+    ttsFrame.pack()
+    ttk.Label(ttsFrame,text="TTS Install location:")
+    self.TTSLocation=Tk.StringVar()
+    self.TTSLocation.set("")
+    try:
+      self.TTSLocation.set(winreg.QueryValueEx(self.registry,"TTSLocation")[0])
+    except FileNotFoundError as e:
+      pass
 
   def apply(self):
     winreg.SetValueEx(self.registry,"locationIsUser",0,winreg.REG_SZ,str(self.locationIsUser.get()))
