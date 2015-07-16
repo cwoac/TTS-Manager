@@ -246,14 +246,15 @@ class TTS_GUI:
     tts.logger().info("Setting log level to %s" % levels[self.loggerLevel.current()])
     tts.logger().setLevel(levels[self.loggerLevel.current()])
 
-  def preferences(self):
-    r=tts.preferences.Preferences(self.root)
-    if r.result:
-      self.log.debug(r.result)
+  def showPreferences(self):
+    preferences_dialog=tts.preferences.PreferencesDialog(self.root)
+    self.log.debug(preferences_dialog.preferences)
+    self.preferences=preferences_dialog.preferences
 
   def __init__(self,root):
     self.log=tts.logger()
     self.log.setLevel(logging.WARN)
+    self.preferences=tts.preferences.Preferences()
     self.root=root
     self.filesystem=tts.get_default_fs()
     mode_notebook = ttk.Notebook(root)
@@ -286,9 +287,11 @@ class TTS_GUI:
     tts.setLoggerConsole(logger)
     pref_frame=ttk.Frame(root)
     pref_frame.pack(fill=Tk.X,expand=Tk.Y)
-    ttk.Button(pref_frame,text="Preferences",command=self.preferences).pack()
+    ttk.Button(pref_frame,text="Preferences",command=self.showPreferences).pack()
 
-
+    if self.preferences.firstRun:
+      messagebox.showinfo("TTS Manager","First run detected.\nOpening prefences pane")
+      self.showPreferences()
 
 def main():
   root = Tk.Tk()
