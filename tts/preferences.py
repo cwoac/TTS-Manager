@@ -2,6 +2,7 @@ import tkinter as Tk
 import tkinter.ttk as ttk
 import tkinter.simpledialog as simpledialog
 import tkinter.filedialog as filedialog
+import tkinter.messagebox as messagebox
 import winreg
 import tts
 
@@ -36,7 +37,6 @@ class Preferences():
     if self._locationIsUser==(value==1):
       return
     self._locationIsUser=(value==1)
-    winreg.SetValueEx(self.registry,"locationIsUser",0,winreg.REG_SZ,str(self.locationIsUser))
     self.changed=True
 
   @property
@@ -48,7 +48,6 @@ class Preferences():
     if self._TTSLocation==value:
       return
     self._TTSLocation=value
-    winreg.SetValueEx(self.registry,"TTSLocation",0,winreg.REG_SZ,str(self.TTSLocation))
     self.changed=True
 
   @property
@@ -60,7 +59,6 @@ class Preferences():
     if self._defaultSaveLocation==value:
       return
     self._defaultSaveLocation=value
-    winreg.SetValueEx(self.registry,"defaultSaveLocation",0,winreg.REG_SZ,str(self.defaultSaveLocation))
     self.changed=True
 
   @property
@@ -72,7 +70,6 @@ class Preferences():
     if self._firstRun==(value==1):
       return
     self._firstRun=(value==1)
-    winreg.SetValueEx(self.registry,"firstRun",0,winreg.REG_SZ,str(self._firstRun))
     self.changed=True
 
   def save(self):
@@ -85,12 +82,11 @@ class Preferences():
     winreg.SetValueEx(self.registry,"firstRun",0,winreg.REG_SZ,str(self._firstRun))
 
   def __str__(self):
-    return """Prefences:
-    locationIsUser: {}
-    TTSLocation: {}
-    DefaultSaveLocation: {}
-    firstRun: {}
-    """.format(self.locationIsUser,self.TTSLocation,self.defaultSaveLocation,self.firstRun)
+    return """Preferences:
+locationIsUser: {}
+TTSLocation: {}
+DefaultSaveLocation: {}
+firstRun: {}""".format(self.locationIsUser,self.TTSLocation,self.defaultSaveLocation,self.firstRun)
 
 
 
@@ -118,7 +114,7 @@ class PreferencesDialog(simpledialog.Dialog):
     self.ttsLocationEntry.insert(0,self.preferences.TTSLocation)
     self.ttsLocationEntry.grid(row=4)
     ttk.Button(master,text="Browse",command=self.pickTTSDir).grid(row=4,column=1,sticky=Tk.E)
-    ttk.Label(master,text="If you have installed via Steam, this will be something like \"C:\\Program Files (x86)\\Steam\\steamapps\\common\\Tabletop Simulator").grid(row=5,columnspan=2)
+    ttk.Label(master,text="If you have installed via Steam, this will be something like:\n \"C:\\Program Files (x86)\\Steam\\steamapps\\common\\Tabletop Simulator\"").grid(row=5,columnspan=2)
 
   def pickTTSDir(self):
     self.preferences.TTSLocation=filedialog.askdirectory(
@@ -128,6 +124,15 @@ class PreferencesDialog(simpledialog.Dialog):
     self.ttsLocationEntry.delete(0,Tk.END)
     self.ttsLocationEntry.insert(0,self.preferences.TTSLocation)
 
+  def validate(self):
+    if self.locationIsUser.get():
+      return True
+
+    fs=tts.filesystem.FileSystem(tts_install_path=self.preferences.TTSLocation)
+    if not fs.check_dirs():
+      messagebox.showwarning("Missing directories","Unable to find some directories - please check your settings.")
+      return False
+    return True
 
   def apply(self):
     self.preferences.save()

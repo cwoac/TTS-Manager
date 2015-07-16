@@ -99,6 +99,9 @@ class FileSystem:
     return result
 
   def get_filenames_in(self,search_path):
+    if not os.path.isdir(search_path):
+      tts.logger().warn("Tried to search non-existent path {}.".format(search_path))
+      return []
     return [os.path.splitext(file)[0] for file in os.listdir(search_path) if os.path.splitext(file)[1].lower()=='.json']
 
   def get_save_filenames(self):
