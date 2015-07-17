@@ -6,27 +6,51 @@ import json
 import urllib.error
 
 def importPak(filesystem,filename):
+  log=tts.logger()
+  log.debug("About to import {} into {}.".format(filename,filesystem))
   if not os.path.isfile(filename):
-    return 1, "Unable to find mod pak %s" % filename
+    log.error("Unable to find mod pak {}".format(filename))
+    return False
   if not zipfile.is_zipfile(filename):
-    return 1, "Mod pak %s format appears corrupt." % filename
-  with zipfile.ZipFile(filename,'r') as zf:
-    if not zf.comment:
-      return 1, "Missing pak header comment in %s." % filename
-    metadata=json.loads(zf.comment.decode('utf-8'))
-    if not tts.validate_metadata(metadata):
-      return 1, "Unable to read pak header comment in %s." % filename
-    print("Extracting %s pak for id %s (pak version %s)" % (metadata['Type'],metadata['Id'],metadata['Ver']))
-    # TODO: handle exceptions
-    # TODO: handle mixed location saves
-    zf.extractall(filesystem.basepath)
-  return 0,"Imported %s" % filename
+    log.error("Mod pak {} format appears corrupt.".format(filename))
+    return False
+  try:
+    with zipfile.ZipFile(filename,'r') as zf:
+      bad_file=zf.testzip()
+      if bad_file:
+        log.error("At least one corrupt file found in {} - {}".format(filename,bad_file))
+        return False
+      if not zf.comment:
+        # TODO: allow overrider
+        log.error("Missing pak header comment in {}. Aborting import.".format(filename))
+        return False
+      metadata=json.loads(zf.comment.decode('utf-8'))
+      if not tts.validate_metadata(metadata):
+        log.error("Unable to read pak header comment in {}. Aborting import.".format(filename))
+        return False
+      log.info("Extracting {} pak for id {} (pak version {})".format(metadata['Type'],metadata['Id'],metadata['Ver']))
+      for name in zf.namelist():
+        # Note that zips always use '/' as the seperator it seems.
+        start=name.split('/')[0]
+        if start=='Saves':
+          log.debug("Extracting {} to {}.".format(name,filesystem.basepath))
+          zf.extract(name,filesystem.basepath)
+        else:
+          log.debug("Extracting {} to {}".format(name,filesystem.modpath))
+          zf.extract(name,filesystem.modpath)
+  except zipfile.BadZipFile as e:
+    log.error("Mod pak {} format appears corrupt - {}.".format(filename,e))
+  except zipfile.LargeZipFile as e:
+    log.error("Mod pak {} requires large zip capability - {}.\nThis shouldn't happen - please raise a bug.".format(filename,e))
+  log.info("Imported {} successfully.".format(filename))
+  return True
 
 def get_save_urls(savedata):
   '''
   Iterate over all the values in the json file, building a (key,value) set of
   all the values whose key ends in "URL"
   '''
+  log=tts.logger()
   def parse_list(data):
     urls=set()
     for item in data:
@@ -37,11 +61,12 @@ def get_save_urls(savedata):
     if not data:
       return urls
     for key in data:
-      if type(data[key]) is not str or key=='PageURL':
+      if type(data[key]) is not str or key=='PageURL' or key=='Rules':
         # If it isn't a string, it can't be an url.
-        # Also don't save tablet state.
+        # Also don't save tablet state / rulebooks
         continue
       if key.endswith('URL') and data[key]!='':
+        log.debug("Found {}:{}".format(key,data[key]))
         urls.add(data[key])
         continue
       protocols=data[key].split('://')
@@ -51,6 +76,7 @@ def get_save_urls(savedata):
       if protocols[0] in ['http','https','ftp']:
         # belt + braces.
         urls.add(data[key])
+        log.debug("Found {}:{}".format(key,data[key]))
         continue
     for item in data.values():
       urls |= get_save_urls(item)
@@ -65,6 +91,7 @@ def get_save_urls(savedata):
 
 class Save:
   def __init__(self,savedata,filename,ident,save_type=SaveType.workshop,filesystem=get_default_fs()):
+    log=tts.logger()
     self.data = savedata
     self.ident=ident
     if self.data['SaveName']:
@@ -74,15 +101,22 @@ class Save:
     self.save_type=save_type
     self.filesystem = filesystem
     self.filename=filename
+    #strip the local part off.
+    fileparts=self.filename.split(os.path.sep)
+    while fileparts[0]!='Saves' and fileparts[0]!='Mods':
+      fileparts=fileparts[1:]
+    self.basename=os.path.join(*fileparts)
+    log.debug("filename: {},save_name: {}, basename: {}".format(self.filename,self.save_name,self.basename))
     self.urls = [ Url(url,self.filesystem) for url in get_save_urls(savedata) ]
     self.missing = [ x for x in self.urls if not x.exists ]
-    self.models=[ x for x in self.urls if x.exists and x.isImage ]
-    self.images=[ x for x in self.urls if x.exists and not x.isImage ]
+    self.images=[ x for x in self.urls if x.exists and x.isImage ]
+    self.models=[ x for x in self.urls if x.exists and not x.isImage ]
+    log.debug("Urls found {}:{} missing, {} models, {} images".format(len(self.urls),len(self.missing),len(self.models),len(self.images)))
 
   def export(self,export_filename):
     log=tts.logger()
     log.info("About to export %s to %s" % (self.ident,export_filename))
-    zfs = tts.filesystem.FileSystem("")
+    zfs = tts.filesystem.FileSystem(base_path="")
     zipComment = {
       "Ver":1,
       "Id":self.ident,
@@ -92,10 +126,13 @@ class Save:
     # TODO: error checking.
     with zipfile.ZipFile(export_filename,'w') as zf:
       zf.comment=json.dumps(zipComment).encode('utf-8')
+      log.debug("Writing {} (base {}) to {}".format(self.filename,os.path.basename(self.filename),zfs.get_path_by_type(os.path.basename(self.filename),self.save_type)))
       zf.write(self.filename,zfs.get_path_by_type(os.path.basename(self.filename),self.save_type))
       for url in self.models:
+        log.debug("Writing {} to {}".format(url.location,zfs.get_model_path(os.path.basename(url.location))))
         zf.write(url.location,zfs.get_model_path(os.path.basename(url.location)))
       for url in self.images:
+        log.debug("Writing {} to {}".format(url.location,zfs.get_model_path(os.path.basename(url.location))))
         zf.write(url.location,zfs.get_image_path(os.path.basename(url.location)))
     log.info("File exported.")
 

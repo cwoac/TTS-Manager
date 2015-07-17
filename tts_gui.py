@@ -148,8 +148,11 @@ class TTS_GUI:
 
   def importPak(self):
     # TODO: Exception Handling
-    rc,message=tts.save.importPak(self.filesystem,self.import_filename)
-    messagebox.showinfo("TTS Manager",message)
+    rc=tts.save.importPak(self.filesystem,self.import_filename)
+    if rc:
+      messagebox.showinfo("TTS Manager","Pak imported successfully.")
+    else:
+      messagebox.showwarning("TTS Manager","Pak import failed - see log.")
 
   def toggleDownloadMissing(self):
     if self.downloadMissingFiles.get():

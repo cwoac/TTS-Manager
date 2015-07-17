@@ -7,11 +7,11 @@ def standard_basepath():
 
 class FileSystem:
   def __init__(self,base_path=None,tts_install_path=None):
-    if base_path:
+    if base_path is not None:
       self.basepath=base_path
     else:
       self.basepath=standard_basepath()
-    if tts_install_path:
+    if tts_install_path is not None:
       self.modpath=os.path.join(tts_install_path,"Tabletop Simulator_Data")
     else:
       self.modpath=self.basepath
