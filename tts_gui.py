@@ -143,6 +143,7 @@ class TTS_GUI:
       if not successful:
         messagebox.showinfo("TTS Manager","Export failed (see log)")
         return
+    self.export_filename=self.targetEntry.get()
     self.export_sb.save.export(self.export_filename)
     messagebox.showinfo("TTS Manager","Export Done.")
 
