@@ -90,7 +90,7 @@ def get_save_urls(savedata):
 
 
 class Save:
-  def __init__(self,savedata,filename,ident,save_type=SaveType.workshop,filesystem=get_default_fs()):
+  def __init__(self,savedata,filename,ident,filesystem,save_type=SaveType.workshop):
     log=tts.logger()
     self.data = savedata
     self.ident=ident

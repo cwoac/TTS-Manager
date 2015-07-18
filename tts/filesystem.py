@@ -147,13 +147,13 @@ class FileSystem:
 
   def get_json_filename_type(self,basename):
     if os.path.isfile(os.path.join(self._workshop,basename+'.json')):
-      return SaveType.workshop
+      return tts.SaveType.workshop
     if os.path.isfile(os.path.join(self._saves,basename+'.json')):
-      return SaveType.save
+      return tts.SaveType.save
     if os.path.isfile(os.path.join(self._chest,basename+'.json')):
-      return SaveType.chest
+      return tts.SaveType.chest
     # TODO: error handling here
     return None
 
   def __str__(self):
-    return "Saves: {}\nMods: {}".format(self.basepath,self.modpath)
+    return "Saves: {} Mods: {}".format(self.basepath,self.modpath)

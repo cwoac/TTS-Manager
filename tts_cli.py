@@ -102,7 +102,7 @@ class TTS_CLI:
     if args.directory:
       self.filesystem = tts.filesystem.FileSystem(os.path.abspath(args.directory))
     else:
-      self.filesystem = tts.get_default_fs()
+      self.filesystem = self.preferences.get_filesystem()
 
     if (args.parser=='list' or args.parser=='export') and not args.save_type:
       # set default
@@ -132,7 +132,7 @@ class TTS_CLI:
     return 0,self.preferences
 
   def do_config_validate(self,args):
-    if self.preferences.validate()
+    if self.preferences.validate():
       return 0,"Configuration validated OK."
     else:
       return 1,"Configuration failed to validate."
@@ -154,7 +154,7 @@ class TTS_CLI:
     if not data:
       self.list_installed()
       return
-    save=tts.Save(savedata=data,ident=ident,filename=filename)
+    save=tts.Save(savedata=data,ident=ident,filename=filename,filesystem=self.filesystem)
     return 0,save
 
   def do_download(self,args):
@@ -190,7 +190,11 @@ class TTS_CLI:
     if not args.id:
       rc,result=self.list_by_type(args.save_type)
     else:
-      filename=self.filesystem.get_json_filename(args.id)
+      if not args.save_type:
+        args.save_type=self.filesystem.get_json_filename_type(args.id)
+      if not args.save_type:
+        return 1,"Unable to determine type of id %s" % args.id
+      filename=self.filesystem.get_json_filename_for_type(args.id,args.save_type)
       data=tts.load_json_file(filename)
       rc,result=self.list_item(data,filename,args.id)
     return rc,result
