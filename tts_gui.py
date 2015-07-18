@@ -256,12 +256,6 @@ class TTS_GUI:
     self.preferences=preferences_dialog.preferences
     self.reload_filesystem()
 
-  def reload_filesystem(self):
-    if self.preferences.locationIsUser:
-      self.filesystem=tts.get_default_fs()
-    else:
-      self.filesystem=tts.filesystem.FileSystem(tts_install_path=self.preferences.TTSLocation)
-
   def __init__(self,root):
     self.log=tts.logger()
     self.log.setLevel(logging.WARN)
@@ -276,7 +270,7 @@ class TTS_GUI:
       messagebox.showwarning("TTS Manager","Invalid preferences detected.\nOpening preferences pane.")
       self.showPreferences()
 
-    self.reload_filesystem()
+    self.filesystem=self.preferences.get_filesystem()
     mode_notebook = ttk.Notebook(root)
     list_frame = ttk.Frame(mode_notebook)
     self.populate_list_frame(list_frame)
