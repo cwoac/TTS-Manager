@@ -147,7 +147,7 @@ class TTS_GUI:
     messagebox.showinfo("TTS Manager","Export Done.")
 
   def importPak(self):
-    # TODO: Exception Handling
+    self.import_filename=self.importEntry.get()
     rc=tts.save.importPak(self.filesystem,self.import_filename)
     if rc:
       messagebox.showinfo("TTS Manager","Pak imported successfully.")
