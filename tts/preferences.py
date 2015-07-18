@@ -72,6 +72,16 @@ class Preferences():
     self._firstRun=(value==1)
     self.changed=True
 
+  def reset(self):
+    self._locationIsUser=True
+    self._firstRun=1
+    self._defaultSaveLocation=""
+    self._TTSLocation=""
+    winreg.DeleteValue(self.registry,"locationIsUser")
+    winreg.DeleteValue(self.registry,"TTSLocation")
+    winreg.DeleteValue(self.registry,"defaultSaveLocation")
+    winreg.DeleteValue(self.registry,"firstRun")
+
   def save(self):
     # No longer first run.
     self.firstRun=0

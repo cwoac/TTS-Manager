@@ -12,12 +12,15 @@ import logging
 
 class TTS_CLI:
   def __init__(self):
+    self.preferences=tts.preferences.Preferences()
+
     parser = argparse.ArgumentParser(description="Manipulate Tabletop Simulator files")
     parser.add_argument("-d","--directory",help="Override TTS cache directory")
     parser.add_argument("-l","--loglevel",help="Set logging level",choices=['debug','info','warn','error'])
     subparsers = parser.add_subparsers(dest='parser',title='command',description='Valid commands.')
     subparsers.required=True
-    # add list command
+
+  # add list command
     parser_list = subparsers.add_parser('list',help="List installed mods.",description='''
     List installed mods.
     If no id is provided, then this will return a list of all installed modules.
@@ -60,11 +63,26 @@ class TTS_CLI:
     parser_download.set_defaults(func=self.do_download)
 
     # cache command
-    parser_cache = subparsers.add_parser('cache',help='Work with the cache')
+    parser_cache = subparsers.add_parser('cache',help='Work with the cache.')
     subparsers_cache = parser_cache.add_subparsers(dest='parser_cache',title='cache_command',description='Valid sub-commands.')
     subparsers_cache.required = True
     parser_cache_create = subparsers_cache.add_parser('create',help='(re)create cache directory')
     parser_cache_create.set_defaults(func=self.do_cache_create)
+
+    # config command
+    parser_config = subparsers.add_parser('config',help='Configure tts manager.')
+    subparsers_config = parser_config.add_subparsers(dest='parser_config',title='config_command',description='Valid sub-commands.')
+    subparsers_config.required = True
+    parser_config_list = subparsers_config.add_parser('list',help='List configuration.')
+    parser_config_list.set_defaults(func=self.do_config_list)
+    parser_config_validate = subparsers_config.add_parser('validate',help='Validate configuration.')
+    parser_config_validate.set_defaults(func=self.do_config_validate)
+    parser_config_reset = subparsers_config.add_parser('reset',help='Reset configuration.')
+    parser_config_reset.set_defaults(func=self.do_config_reset)
+    parser_config_set = subparsers_config.add_parser('set',help='Set configuration parameters.')
+    parser_config_set.set_defaults(func=self.do_config_set)
+    parser_config_set.add_argument("-m","--mod_location",choices=['documents','gamedata'],help="Where mods are stored.")
+    parser_config_set.add_argument("-t","--tts_location",help="TTS Install directory")
 
     args = parser.parse_args()
 
@@ -90,11 +108,36 @@ class TTS_CLI:
       # set default
       args.save_type = tts.SaveType.workshop
 
+    if (args.parser=='config' and args.parser_config=='set' and not args.mod_location and not args.tts_location):
+      #parser_config.print_usage()
+      parser_config_set.error("At least one of -m or -t is required.")
 
     rc,message = args.func(args)
     if message:
       print(message)
     sys.exit(rc)
+
+  def do_config_set(self,args):
+    if args.mod_location:
+      self.preferences.locationIsUser = args.mod_location=='documents'
+    if args.tts_location:
+      self.preferences.TTSLocation=args.mod_location
+    self.preferences.save()
+    return 0,"Preferences set"
+
+  def do_config_reset(self,args):
+    self.preferences.reset()
+    return 0,"Preferences Reset."
+
+  def do_config_list(self,args):
+    return 0,self.preferences
+
+  def do_config_validate(self,args):
+    fs=tts.filesystem.FileSystem(tts_install_path=self.preferences.TTSLocation)
+    if fs.check_dirs():
+      return 0,"Configuration validated OK."
+    else:
+      return 1,"Configuration failed to validate."
 
   def do_cache_create(self,args):
     try:
