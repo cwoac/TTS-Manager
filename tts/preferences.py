@@ -91,6 +91,12 @@ class Preferences():
     winreg.SetValueEx(self.registry,"defaultSaveLocation",0,winreg.REG_SZ,str(self.defaultSaveLocation))
     winreg.SetValueEx(self.registry,"firstRun",0,winreg.REG_SZ,str(self._firstRun))
 
+  def validate(self):
+    if self.locationIsUser:
+      return True
+    fs=tts.filesystem.FileSystem(tts_install_path=self.TTSLocation)
+    return fs.check_dirs()
+
   def __str__(self):
     return """Preferences:
 locationIsUser: {}
@@ -135,11 +141,7 @@ class PreferencesDialog(simpledialog.Dialog):
     self.ttsLocationEntry.insert(0,self.preferences.TTSLocation)
 
   def validate(self):
-    if self.locationIsUser.get():
-      return True
-
-    fs=tts.filesystem.FileSystem(tts_install_path=self.preferences.TTSLocation)
-    if not fs.check_dirs():
+    if not self.preferences.validate():
       messagebox.showwarning("Missing directories","Unable to find some directories - please check your settings.")
       return False
     return True

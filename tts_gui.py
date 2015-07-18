@@ -268,7 +268,11 @@ class TTS_GUI:
     self.root=root
 
     if self.preferences.firstRun:
-      messagebox.showinfo("TTS Manager","First run detected.\nOpening prefences pane")
+      messagebox.showinfo("TTS Manager","First run detected.\nOpening preferences pane.")
+      self.showPreferences()
+
+    if not self.preferences.validate():
+      messagebox.showwarning("TTS Manager","Invalid preferences detected.\nOpening preferences pane.")
       self.showPreferences()
 
     self.reload_filesystem()

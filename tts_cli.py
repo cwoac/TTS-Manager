@@ -109,7 +109,6 @@ class TTS_CLI:
       args.save_type = tts.SaveType.workshop
 
     if (args.parser=='config' and args.parser_config=='set' and not args.mod_location and not args.tts_location):
-      #parser_config.print_usage()
       parser_config_set.error("At least one of -m or -t is required.")
 
     rc,message = args.func(args)
@@ -133,8 +132,7 @@ class TTS_CLI:
     return 0,self.preferences
 
   def do_config_validate(self,args):
-    fs=tts.filesystem.FileSystem(tts_install_path=self.preferences.TTSLocation)
-    if fs.check_dirs():
+    if self.preferences.validate()
       return 0,"Configuration validated OK."
     else:
       return 1,"Configuration failed to validate."
