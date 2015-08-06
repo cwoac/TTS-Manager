@@ -2,6 +2,8 @@ import urllib.request
 import urllib.error
 import imghdr
 import tts
+from socket import error as SocketError
+
 
 # fix jpeg detection
 def test_jpg(h,f):
@@ -40,7 +42,7 @@ class Url:
     request=urllib.request.Request(url,headers=headers)
     try:
       response=urllib.request.urlopen(request)
-    except urllib.error.URLError as e:
+    except (urllib.error.URLError,SocketError) as e:
       log.error("Error downloading %s (%s)" % (url,e))
       return False
     data=response.read()
@@ -97,5 +99,3 @@ class Url:
              self.url)
     else:
       return "%s (Not Found)" % self.url
-
-
