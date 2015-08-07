@@ -33,11 +33,6 @@ class TTS_MANAGER:
     self.file_list_current=None
     self.file_list_box.selection_clear(0,Tk.END)
 
-  def change_log_level(self,event):
-    levels=[logging.DEBUG,logging.INFO,logging.WARN,logging.ERROR]
-    tts.logger().info("Setting log level to %s" % levels[self.loggerLevel.current()])
-    tts.logger().setLevel(levels[self.loggerLevel.current()])
-
   def populate_manage_frame(self,frame):
     ttk.Label(frame,text="Select list source:").grid(row=0,sticky=Tk.W)
     self.save_type=Tk.IntVar()
