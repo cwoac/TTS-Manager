@@ -26,8 +26,7 @@ class TTS_LOGGER:
     # Enable resizing
     for x in range(2):
       Tk.Grid.columnconfigure(frame,x,weight=1)
-    for y in range(2):
-      Tk.Grid.rowconfigure(frame,y,weight=1)
+    Tk.Grid.rowconfigure(frame,1,weight=1)
 
   def toggle(self):
     if self.log_window.state()=="withdrawn":
