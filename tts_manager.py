@@ -15,6 +15,7 @@ class TTS_MANAGER:
     self.root=root
     Tk.Grid.rowconfigure(self.root,0,weight=1)
     Tk.Grid.columnconfigure(self.root,0,weight=1)
+    self.populate_log_window()
 
     if self.preferences.firstRun:
       messagebox.showinfo("TTS Manager","First run detected.\nOpening preferences pane.")
@@ -31,6 +32,34 @@ class TTS_MANAGER:
     self.filesystem=self.preferences.get_filesystem()
     self.file_list_current=None
     self.file_list_box.selection_clear(0,Tk.END)
+
+  def populate_log_window(self):
+    self.log_window=Tk.Toplevel(self.root)
+    Tk.Grid.rowconfigure(self.log_window,0,weight=1)
+    Tk.Grid.columnconfigure(self.log_window,0,weight=1)
+    self.log_window.title("TTS Manager Log")
+    frame=ttk.Frame(self.log_window)
+    frame.grid(sticky=Tk.N+Tk.S+Tk.E+Tk.W)
+    ttk.Label(frame,text="Log:").grid()
+    self.log_window.withdraw()
+    self.loggerLevel=ttk.Combobox(frame,state="readonly",value=['debug','infomation','warning','error'])
+    self.loggerLevel.bind("<<ComboboxSelected>>",self.change_log_level)
+    self.loggerLevel.current(2)
+    self.loggerLevel.grid(row=0,column=1,sticky=Tk.W+Tk.E)
+    logger=scrolledtext.ScrolledText(frame,state=Tk.DISABLED,height=5)
+    logger.grid(row=1,columnspan=2,sticky=Tk.N+Tk.S+Tk.E+Tk.W)
+    tts.setLoggerConsole(logger)
+
+    # Enable resizing
+    for x in range(4):
+      Tk.Grid.columnconfigure(frame,x,weight=1)
+    for y in range(3):
+      Tk.Grid.rowconfigure(frame,y,weight=1)
+
+  def change_log_level(self,event):
+    levels=[logging.DEBUG,logging.INFO,logging.WARN,logging.ERROR]
+    tts.logger().info("Setting log level to %s" % levels[self.loggerLevel.current()])
+    tts.logger().setLevel(levels[self.loggerLevel.current()])
 
   def populate_manage_frame(self,frame):
     ttk.Label(frame,text="Select list source:").grid(row=0,sticky=Tk.W)
@@ -73,6 +102,7 @@ class TTS_MANAGER:
     self.exportButton.grid(row=2,column=1)
 
     ttk.Button(frame,text="Preferences",command=self.showPreferences).grid(row=3)
+    ttk.Button(frame,text="Log",command=self.toggleLog).grid(row=3,column=1)
 
     # Enable resizing
     for x in range(4):
@@ -83,6 +113,13 @@ class TTS_MANAGER:
     self.file_list_current=None
     self.list_command()
     self.poll_file_list()
+
+  def toggleLog(self):
+    # TODO:: handle closed windows
+    if self.log_window.state()=="withdrawn":
+      self.log_window.deiconify()
+    else:
+      self.log_window.withdraw()
 
   def download(self):
     if not self.save:
