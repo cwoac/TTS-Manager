@@ -35,6 +35,7 @@ class TTS_MANAGER:
 
   def populate_log_window(self):
     self.log_window=Tk.Toplevel(self.root)
+    self.log_window.protocol("WM_DELETE_WINDOW",self.log_window.withdraw)
     Tk.Grid.rowconfigure(self.log_window,0,weight=1)
     Tk.Grid.columnconfigure(self.log_window,0,weight=1)
     self.log_window.title("TTS Manager Log")
@@ -115,7 +116,6 @@ class TTS_MANAGER:
     self.poll_file_list()
 
   def toggleLog(self):
-    # TODO:: handle closed windows
     if self.log_window.state()=="withdrawn":
       self.log_window.deiconify()
     else:
