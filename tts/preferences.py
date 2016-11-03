@@ -9,7 +9,7 @@ import tts
 class Preferences():
   def __init__(self):
     self.connection=winreg.ConnectRegistry(None,winreg.HKEY_CURRENT_USER)
-    self.registry=winreg.OpenKey( self.connection, "Software\TTS Manager",0,winreg.KEY_ALL_ACCESS )
+    self.registry=winreg.CreateKey( self.connection, "Software\TTS Manager")
     self.changed=False
     try:
       self._locationIsUser="True"==winreg.QueryValueEx(self.registry,"locationIsUser")[0]
