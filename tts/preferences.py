@@ -3,30 +3,26 @@ import tkinter.ttk as ttk
 import tkinter.simpledialog as simpledialog
 import tkinter.filedialog as filedialog
 import tkinter.messagebox as messagebox
-import winreg
+import importlib
 import tts
+
+#if win
+USE_REGISTRY = importlib.find_loader('winreg')
+if USE_REGISTRY:
+  import winreg
+else:
+  import xdgappdirs
+  import os
+  import configparser
 
 class Preferences():
   def __init__(self):
-    self.connection=winreg.ConnectRegistry(None,winreg.HKEY_CURRENT_USER)
-    self.registry=winreg.OpenKey( self.connection, "Software\TTS Manager",0,winreg.KEY_ALL_ACCESS )
     self.changed=False
-    try:
-      self._locationIsUser="True"==winreg.QueryValueEx(self.registry,"locationIsUser")[0]
-    except FileNotFoundError as e:
-      self._locationIsUser=True
-    try:
-      self._TTSLocation=winreg.QueryValueEx(self.registry,"TTSLocation")[0]
-    except FileNotFoundError as e:
-      self._TTSLocation=""
-    try:
-      self._defaultSaveLocation=winreg.QueryValueEx(self.registry,"defaultSaveLocation")[0]
-    except FileNotFoundError as e:
-      self._defaultSaveLocation=""
-    try:
-      self._firstRun="True"==winreg.QueryValueEx(self.registry,"firstRun")[0]
-    except FileNotFoundError as e:
-      self._firstRun=True
+    self._locationIsUser = True
+    self._TTSLocation = ''
+    self._defaultSaveLocation = ''
+    self._firstRun = False
+    #child class must initialize these properly (load from disk or assign defaults)
 
   @property
   def locationIsUser(self):
@@ -34,9 +30,9 @@ class Preferences():
 
   @locationIsUser.setter
   def locationIsUser(self,value):
-    if self._locationIsUser==(value==1):
+    if self._locationIsUser==bool(value):
       return
-    self._locationIsUser=(value==1)
+    self._locationIsUser=bool(value)
     self.changed=True
 
   @property
@@ -67,9 +63,9 @@ class Preferences():
 
   @firstRun.setter
   def firstRun(self,value):
-    if self._firstRun==(value==1):
+    if self._firstRun==bool(value):
       return
-    self._firstRun=(value==1)
+    self._firstRun=bool(value)
     self.changed=True
 
   def reset(self):
@@ -77,19 +73,12 @@ class Preferences():
     self._firstRun=1
     self._defaultSaveLocation=""
     self._TTSLocation=""
-    winreg.DeleteValue(self.registry,"locationIsUser")
-    winreg.DeleteValue(self.registry,"TTSLocation")
-    winreg.DeleteValue(self.registry,"defaultSaveLocation")
-    winreg.DeleteValue(self.registry,"firstRun")
+    #child class must delete values from disk storage
 
   def save(self):
     # No longer first run.
     self.firstRun=0
-    # Make sure all values have been createds
-    winreg.SetValueEx(self.registry,"locationIsUser",0,winreg.REG_SZ,str(self.locationIsUser))
-    winreg.SetValueEx(self.registry,"TTSLocation",0,winreg.REG_SZ,str(self.TTSLocation))
-    winreg.SetValueEx(self.registry,"defaultSaveLocation",0,winreg.REG_SZ,str(self.defaultSaveLocation))
-    winreg.SetValueEx(self.registry,"firstRun",0,winreg.REG_SZ,str(self._firstRun))
+    #Child class must save all 4 values to disk storage
 
   def validate(self):
     return self.get_filesystem().check_dirs()
@@ -107,6 +96,76 @@ DefaultSaveLocation: {}
 firstRun: {}""".format(self.locationIsUser,self.TTSLocation,self.defaultSaveLocation,self.firstRun)
 
 
+class PreferencesWin(Preferences):
+
+  def __init__(self):
+    super().__init__(self)
+    self._connection=winreg.ConnectRegistry(None,winreg.HKEY_CURRENT_USER)
+    self._registry=winreg.OpenKey( self._connection, "Software\TTS Manager",0,winreg.KEY_ALL_ACCESS )
+    try:
+      self._locationIsUser="True"==winreg.QueryValueEx(self._registry,"locationIsUser")[0]
+    except FileNotFoundError as e:
+      self._locationIsUser=True
+    try:
+      self._TTSLocation=winreg.QueryValueEx(self._registry,"TTSLocation")[0]
+    except FileNotFoundError as e:
+      self._TTSLocation=""
+    try:
+      self._defaultSaveLocation=winreg.QueryValueEx(self._registry,"defaultSaveLocation")[0]
+    except FileNotFoundError as e:
+      self._defaultSaveLocation=""
+    try:
+      self._firstRun="True"==winreg.QueryValueEx(self._registry,"firstRun")[0]
+    except FileNotFoundError as e:
+      self._firstRun=True
+
+  def reset(self):
+    super().reset(self)
+    winreg.DeleteValue(self.registry,"locationIsUser")
+    winreg.DeleteValue(self.registry,"TTSLocation")
+    winreg.DeleteValue(self.registry,"defaultSaveLocation")
+    winreg.DeleteValue(self.registry,"firstRun")
+
+  def save(self):
+    super().save(self)
+    # Make sure all values have been createds
+    winreg.SetValueEx(self._registry,"locationIsUser",0,winreg.REG_SZ,str(self.locationIsUser))
+    winreg.SetValueEx(self._registry,"TTSLocation",0,winreg.REG_SZ,str(self.TTSLocation))
+    winreg.SetValueEx(self._registry,"defaultSaveLocation",0,winreg.REG_SZ,str(self.defaultSaveLocation))
+    winreg.SetValueEx(self._registry,"firstRun",0,winreg.REG_SZ,str(self._firstRun))
+
+
+class PreferencesLinux(Preferences):
+
+  def __init__(self):
+    super().init()
+    self._conffile = os.path.join(xdgappdirs.user_config_dir(),'tts_manager.ini')
+    self._config = configparser.ConfigParser()
+    self._config['main'] = {'locationIsUser': 'yes',
+                         'TTSLocation': '',
+                         'defaultSaveLocation': '',
+                         'firstRun': '0'}
+    self._config.read_file(self._conffile)
+    self._locationIsUser = self._config['main'].getboolean('locationIsUser')
+    self._TTSLocation = self._config['main']['TTSLocation']
+    self._defaultSaveLocation = self._config['main']['defaultSaveLocation']
+    self._firstRun = self._config['main'].getboolean('load_firstRun')
+
+  def reset(self):
+    super().reset(self)
+    os.unlink(self._conffile)
+    self.__init__(self)
+
+  def save(self):
+    super().save(self)
+    # Make sure all values have been createds
+    self._config['main']['locationIsUser'] = self._locationIsUser
+    self._config['main']['TTSLocation'] = self._TTSLocation
+    self._config['main']['defaultSaveLocation'] = self._defaultSaveLocation
+    self._config['main']['firstRun'] = self._firstRun
+    with open(_conffile, 'w') as configfile:
+      self._config.write(configfile)
+
 
 class PreferencesDialog(simpledialog.Dialog):
   def applyLocationIsUser(*args):
@@ -114,7 +173,10 @@ class PreferencesDialog(simpledialog.Dialog):
 
   def body(self,master):
     self.master=master
-    self.preferences=Preferences()
+    if USE_REGISTRY:
+      self.preferences=PreferencesWin()
+    else:
+      self.preferences=PreferencesLinux()
     ttk.Label(master,text="Mod Save Location:").grid(row=0)
     self.locationIsUser=Tk.BooleanVar()
     ttk.Radiobutton(master,
