@@ -1,5 +1,6 @@
 import urllib.request
 import urllib.error
+import http.client
 import imghdr
 import tts
 
@@ -43,7 +44,12 @@ class Url:
     except urllib.error.URLError as e:
       log.error("Error downloading %s (%s)" % (url,e))
       return False
-    data=response.read()
+    try:
+      data=response.read()
+    except http.client.IncompleteRead as e:
+      #This error is the http server did not return the whole file
+      log.error("Error downloading %s (%s)" % (url,e))
+      return False
     imagetype=imghdr.what('',data)
     filename=None
     if imagetype==None:
