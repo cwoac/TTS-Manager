@@ -32,10 +32,14 @@ class FileSystem:
 
   def check_dirs(self):
     """Do all the directories exist?"""
-    for dir in [ self._saves, self._chest, self._mods, self._images, self._models, self._workshop ]:
+    for dir in [ self._saves, self._mods, self._images, self._models, self._workshop ]:
+      if not os.path.isdir(dir):
+        tts.logger().error("TTS Dir missing: {}".format(dir))
+        return False
+    #These directories don't always exist, and that's OK
+    for dir in [ self._chest ]:
       if not os.path.isdir(dir):
         tts.logger().warn("TTS Dir missing: {}".format(dir))
-        return False
     return True
 
   def create_dirs(self):
