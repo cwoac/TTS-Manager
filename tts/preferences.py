@@ -3,19 +3,28 @@ import tkinter.ttk as ttk
 import tkinter.simpledialog as simpledialog
 import tkinter.filedialog as filedialog
 import tkinter.messagebox as messagebox
-import importlib
 import tts
+import platform
 
-#if win
-USE_REGISTRY = importlib.find_loader('winreg')
-if USE_REGISTRY:
+if platform.system() == 'Windows':
   import winreg
 else:
   import xdgappdirs
   import os
   import configparser
 
-class Preferences():
+class Preferences(object):
+  def __new__(cls):
+    """Select the correct platform class."""
+    if platform.system() == 'Windows':
+      new_cls = PreferencesWin
+    else:
+      new_cls = PreferencesLinux
+    instance = super(Preferences, new_cls).__new__(new_cls)
+    if not issubclass(new_cls, cls) and new_cls != cls:
+      instance.__init__(n)
+    return instance
+
   def __init__(self):
     self.changed=False
     self._locationIsUser = True
@@ -99,7 +108,7 @@ firstRun: {}""".format(self.locationIsUser,self.TTSLocation,self.defaultSaveLoca
 class PreferencesWin(Preferences):
 
   def __init__(self):
-    super().__init__(self)
+    super().__init__()
     self._connection=winreg.ConnectRegistry(None,winreg.HKEY_CURRENT_USER)
     self._registry=winreg.CreateKeyEx( self.connection, "Software\TTS Manager",0,winreg.KEY_ALL_ACCESS )
     try:
@@ -120,14 +129,14 @@ class PreferencesWin(Preferences):
       self._firstRun=True
 
   def reset(self):
-    super().reset(self)
+    super().reset()
     winreg.DeleteValue(self.registry,"locationIsUser")
     winreg.DeleteValue(self.registry,"TTSLocation")
     winreg.DeleteValue(self.registry,"defaultSaveLocation")
     winreg.DeleteValue(self.registry,"firstRun")
 
   def save(self):
-    super().save(self)
+    super().save()
     # Make sure all values have been createds
     winreg.SetValueEx(self._registry,"locationIsUser",0,winreg.REG_SZ,str(self.locationIsUser))
     winreg.SetValueEx(self._registry,"TTSLocation",0,winreg.REG_SZ,str(self.TTSLocation))
@@ -138,32 +147,32 @@ class PreferencesWin(Preferences):
 class PreferencesLinux(Preferences):
 
   def __init__(self):
-    super().init()
+    super().__init__()
     self._conffile = os.path.join(xdgappdirs.user_config_dir(),'tts_manager.ini')
-    self._config = configparser.ConfigParser()
+    self._config = configparser.ConfigParser(allow_no_value=True)
     self._config['main'] = {'locationIsUser': 'yes',
                          'TTSLocation': '',
                          'defaultSaveLocation': '',
                          'firstRun': '0'}
-    self._config.read_file(self._conffile)
+    self._config.read(self._conffile, encoding='utf-8')
     self._locationIsUser = self._config['main'].getboolean('locationIsUser')
     self._TTSLocation = self._config['main']['TTSLocation']
     self._defaultSaveLocation = self._config['main']['defaultSaveLocation']
     self._firstRun = self._config['main'].getboolean('load_firstRun')
 
   def reset(self):
-    super().reset(self)
+    super().reset()
     os.unlink(self._conffile)
-    self.__init__(self)
+    self.__init__()
 
   def save(self):
-    super().save(self)
+    super().save()
     # Make sure all values have been createds
-    self._config['main']['locationIsUser'] = self._locationIsUser
+    self._config['main']['locationIsUser'] = 'yes' if self._locationIsUser else 'no'
     self._config['main']['TTSLocation'] = self._TTSLocation
     self._config['main']['defaultSaveLocation'] = self._defaultSaveLocation
-    self._config['main']['firstRun'] = self._firstRun
-    with open(_conffile, 'w') as configfile:
+    self._config['main']['firstRun'] = 'yes' if self._firstRun else 'no'
+    with open(self._conffile, 'w') as configfile:
       self._config.write(configfile)
 
 
@@ -173,10 +182,7 @@ class PreferencesDialog(simpledialog.Dialog):
 
   def body(self,master):
     self.master=master
-    if USE_REGISTRY:
-      self.preferences=PreferencesWin()
-    else:
-      self.preferences=PreferencesLinux()
+    self.preferences=Preferences()
     ttk.Label(master,text="Mod Save Location:").grid(row=0)
     self.locationIsUser=Tk.BooleanVar()
     ttk.Radiobutton(master,
