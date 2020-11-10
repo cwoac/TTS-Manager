@@ -20,11 +20,13 @@ def strip_filename(filename):
   valid_chars = "%s%s" % (string.ascii_letters, string.digits)
   return ''.join(c for c in filename if c in valid_chars)
 
-def validate_metadata(metadata):
+def validate_metadata(metadata, maxver):
   # TODO: extract into new class
-  if not metadata or type(metadata) is not dict:
+  if not metadata or not isinstance(metadata, dict):
     return False
-  return 'Ver' in metadata and 'Id' in metadata and 'Type' in metadata
+  return ('Ver' in metadata and metadata['Ver'] <= maxver and
+          'Id' in metadata and
+          'Type' in metadata and metadata['Type'] in [x.name for x in SaveType])
 
 def load_json_file(filename):
   log=tts.logger()
@@ -62,7 +64,7 @@ def describe_files_by_type(filesystem, save_type, sort_key=lambda mod: mod[0]):
 
       return - List of (name, id)
   """
-  assert (isinstance(save_type, SaveType), "save_type must be a SaveType enum")
+  assert isinstance(save_type, SaveType), "save_type must be a SaveType enum"
   output=[]
   for filename in filesystem.get_filenames_by_type(save_type):
     json=load_file_by_type(filename,filesystem,save_type)
