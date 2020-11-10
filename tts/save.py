@@ -118,7 +118,7 @@ class Save:
     log.info("About to export %s to %s" % (self.ident,export_filename))
     zfs = tts.filesystem.FileSystem(base_path="")
     zipComment = {
-      "Ver":1,
+      "Ver":2,
       "Id":self.ident,
       "Type":self.save_type.name
     }
