@@ -31,14 +31,27 @@ def importPak(filesystem,filename):
         log.error(f"Invalid pak header '{metadata}' in {filename}. Aborting import.")
         return False
       log.info(f"Extracting {metadata['Type']} pak for id {metadata['Id']} (pak version {metadata['Ver']})")
-      for name in zf.namelist():
+
+      #select the thumbnail which matches the metadata id, else anything
+      names = zf.namelist()
+      thumbnails = [name for name in names if '/Thumbnails/' in name]
+      thumbnail = None
+      for thumbnail in thumbnails:
+        if metadata['Id'] in os.path.basename(thumbnail):
+          break
+
+      outname=None
+      for name in names:
         # Note that zips always use '/' as the seperator it seems.
         splitname = name.split('/')
         if len(splitname) > 2 and splitname[2] == 'Thumbnails':
+          if name == thumbnail:
             #remove "Thumbnails" from the path
-            outname='/'.join(splitname[0:2] + [splitname[-1]])
-        else:
+            outname='/'.join(splitname[0:2] + [os.path.extsep.join([metadata['Id'],'png'])])
+          else:
             outname=None
+            continue
+
         start=splitname[0]
         if start=='Saves':
           modpath=filesystem.basepath
@@ -54,6 +67,7 @@ def importPak(filesystem,filename):
             os.rmdir(outdir)
           except OSError:
             log.debug(f"Can't remove dir {outdir}")
+
   except zipfile.BadZipFile as e:
     log.error("Mod pak {} format appears corrupt - {}.".format(filename,e))
   except zipfile.LargeZipFile as e:
