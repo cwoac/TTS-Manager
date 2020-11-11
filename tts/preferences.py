@@ -110,7 +110,7 @@ class PreferencesWin(Preferences):
   def __init__(self):
     super().__init__()
     self._connection=winreg.ConnectRegistry(None,winreg.HKEY_CURRENT_USER)
-    self._registry=winreg.CreateKeyEx( self.connection, "Software\TTS Manager",0,winreg.KEY_ALL_ACCESS )
+    self._registry=winreg.CreateKeyEx( self._connection, "Software\TTS Manager",0,winreg.KEY_ALL_ACCESS )
     try:
       self._locationIsUser="True"==winreg.QueryValueEx(self._registry,"locationIsUser")[0]
     except FileNotFoundError as e:
@@ -130,10 +130,10 @@ class PreferencesWin(Preferences):
 
   def reset(self):
     super().reset()
-    winreg.DeleteValue(self.registry,"locationIsUser")
-    winreg.DeleteValue(self.registry,"TTSLocation")
-    winreg.DeleteValue(self.registry,"defaultSaveLocation")
-    winreg.DeleteValue(self.registry,"firstRun")
+    winreg.DeleteValue(self._registry,"locationIsUser")
+    winreg.DeleteValue(self._registry,"TTSLocation")
+    winreg.DeleteValue(self._registry,"defaultSaveLocation")
+    winreg.DeleteValue(self._registry,"firstRun")
 
   def save(self):
     super().save()
