@@ -5,12 +5,12 @@ import tkinter.filedialog as filedialog
 import tkinter.messagebox as messagebox
 import tts
 import platform
+import os
 
 if platform.system() == 'Windows':
   import winreg
 else:
   import xdgappdirs
-  import os
   import configparser
 
 class Preferences(object):
@@ -50,6 +50,7 @@ class Preferences(object):
 
   @TTSLocation.setter
   def TTSLocation(self,value):
+    value = os.path.normpath(value)
     if self._TTSLocation==value:
       return
     self._TTSLocation=value
@@ -98,11 +99,11 @@ class Preferences(object):
     return tts.filesystem.FileSystem(tts_install_path=self.TTSLocation)
 
   def __str__(self):
-    return """Preferences:
-locationIsUser: {}
-TTSLocation: {}
-DefaultSaveLocation: {}
-firstRun: {}""".format(self.locationIsUser,self.TTSLocation,self.defaultSaveLocation,self.firstRun)
+    return f"""Preferences:
+locationIsUser: {self.locationIsUser}
+TTSLocation: {self.TTSLocation}
+DefaultSaveLocation: {self.defaultSaveLocation}
+firstRun: {self.firstRun}"""
 
 
 class PreferencesWin(Preferences):
@@ -116,7 +117,7 @@ class PreferencesWin(Preferences):
     except FileNotFoundError as e:
       self._locationIsUser=True
     try:
-      self._TTSLocation=winreg.QueryValueEx(self._registry,"TTSLocation")[0]
+      self._TTSLocation=os.path.normpath( winreg.QueryValueEx(self._registry,"TTSLocation")[0] )
     except FileNotFoundError as e:
       self._TTSLocation=""
     try:

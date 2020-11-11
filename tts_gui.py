@@ -118,22 +118,24 @@ class TTS_GUI:
       self.targetEntry.delete(0,Tk.END)
 
   def pickExportTarget(self):
-    self.export_filename = filedialog.asksaveasfilename(
+    exportname = filedialog.asksaveasfilename(
       parent=self.root,
       initialdir=os.path.join(os.path.expanduser("~"),"Downloads"),
       filetypes=[('PAK files','*.pak')],
       defaultextension='pak',
       title='Choose export target')
+    self.export_filename = os.path.normpath(exportname)
     self.targetEntry.delete(0,Tk.END)
     self.targetEntry.insert(0,self.export_filename)
 
   def pickImportTarget(self):
-    self.import_filename = filedialog.askopenfilename(
+    importname = filedialog.askopenfilename(
       parent=self.root,
       initialdir=os.path.join(os.path.expanduser("~"),"Downloads"),
       filetypes=[('PAK files','*.pak')],
       defaultextension='pak',
       title='Choose import target')
+    self.import_filename = os.path.normpath(importname)
     self.importEntry.delete(0,Tk.END)
     self.importEntry.insert(0,self.import_filename)
 
