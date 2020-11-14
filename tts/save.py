@@ -165,9 +165,10 @@ class Save:
       log.debug("Writing {} (base {}) to {}".format(self.filename,os.path.basename(self.filename),zfs.get_path_by_type(os.path.basename(self.filename),self.save_type)))
       zf.write(self.filename,zfs.get_path_by_type(os.path.basename(self.filename),self.save_type))
       if self.thumbnail:
-          filepath=zfs.get_path_by_type(os.path.basename(self.thumbnail),self.save_type)
-          arcname=os.path.join(os.path.dirname(filepath), 'Thumbnails', os.path.basename(filepath))
-          zf.write(self.filename,arcname=arcname)
+        filepath=zfs.get_path_by_type(os.path.basename(self.thumbnail),self.save_type)
+        arcname=os.path.join(os.path.dirname(filepath), 'Thumbnails', os.path.basename(filepath))
+        zf.write(self.thumbnail,arcname=arcname)
+        log.debug(f"Writing {self.thumbnail} to {arcname}")
       for url in self.models:
         log.debug("Writing {} to {}".format(url.location,zfs.get_model_path(os.path.basename(url.location))))
         zf.write(url.location,zfs.get_model_path(os.path.basename(url.location)))
