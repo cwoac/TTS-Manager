@@ -97,7 +97,7 @@ def download_file(filesystem,ident,save_type):
             save_type=save_type,
             filesystem=filesystem)
 
-  if save.isInstalled:
+  if save.is_installed:
     log.info("All files already downloaded.")
     return True
 

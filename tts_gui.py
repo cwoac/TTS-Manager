@@ -72,7 +72,7 @@ class SaveBrowser():
                   filename=filename,
                   save_type=tts.SaveType(self.save_type.get()),
                   filesystem=self.filesystem)
-    if self.save.isInstalled:
+    if self.save.is_installed:
       self.status_label.config(text="All files found.")
     else:
       self.status_label.config(text="Some cache files missing - check details on list page.")
@@ -96,7 +96,7 @@ class TTS_GUI:
     self.list_sb.list_command()
 
   def update_export_frame_details(self,event):
-    if self.export_sb.save.isInstalled:
+    if self.export_sb.save.is_installed:
       self.downloadMissingFiles.set(False)
       self.downloadMissingFilesCB.config(state=Tk.DISABLED)
       self.exportButton.config(state=Tk.NORMAL)
@@ -132,7 +132,7 @@ class TTS_GUI:
     self.importEntry.insert(0,self.import_filename)
 
   def exportPak(self):
-    if not self.export_sb.save.isInstalled:
+    if not self.export_sb.save.is_installed:
       successful = self.export_sb.save.download()
       if not successful:
         messagebox.showinfo("TTS Manager","Export failed (see log)")
@@ -143,7 +143,7 @@ class TTS_GUI:
 
   def importPak(self):
     self.import_filename=self.importEntry.get()
-    rc=tts.save.importPak(self.filesystem,self.import_filename)
+    rc=tts.save.import_pak(self.filesystem, self.import_filename)
     if rc:
       messagebox.showinfo("TTS Manager","Pak imported successfully.")
     else:
@@ -202,7 +202,7 @@ class TTS_GUI:
     ttk.Button(importFrame,text="Import",command=self.importPak).pack()
 
   def update_download_frame_details(self,event):
-    if self.download_sb.save.isInstalled:
+    if self.download_sb.save.is_installed:
       self.downloadButton.config(state=Tk.DISABLED)
     else:
       self.downloadButton.config(state=Tk.NORMAL)
