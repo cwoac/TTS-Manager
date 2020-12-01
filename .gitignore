@@ -63,3 +63,6 @@ tts_gui*.zip
 setup*.exe
 *.swp
 *~
+
+# intellij
+/.idea/
