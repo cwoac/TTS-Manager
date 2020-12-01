@@ -5,6 +5,8 @@ import zipfile
 import json
 import urllib.error
 
+PAK_VER=2
+
 def importPak(filesystem,filename):
   log=tts.logger()
   log.debug("About to import {} into {}.".format(filename,filesystem))
@@ -25,19 +27,47 @@ def importPak(filesystem,filename):
         log.error("Missing pak header comment in {}. Aborting import.".format(filename))
         return False
       metadata=json.loads(zf.comment.decode('utf-8'))
-      if not tts.validate_metadata(metadata):
-        log.error("Unable to read pak header comment in {}. Aborting import.".format(filename))
+      if not tts.validate_metadata(metadata, PAK_VER):
+        log.error(f"Invalid pak header '{metadata}' in {filename}. Aborting import.")
         return False
-      log.info("Extracting {} pak for id {} (pak version {})".format(metadata['Type'],metadata['Id'],metadata['Ver']))
-      for name in zf.namelist():
+      log.info(f"Extracting {metadata['Type']} pak for id {metadata['Id']} (pak version {metadata['Ver']})")
+
+      #select the thumbnail which matches the metadata id, else anything
+      names = zf.namelist()
+      thumbnails = [name for name in names if '/Thumbnails/' in name]
+      thumbnail = None
+      for thumbnail in thumbnails:
+        if metadata['Id'] in os.path.basename(thumbnail):
+          break
+
+      outname=None
+      for name in names:
         # Note that zips always use '/' as the seperator it seems.
-        start=name.split('/')[0]
+        splitname = name.split('/')
+        if len(splitname) > 2 and splitname[2] == 'Thumbnails':
+          if name == thumbnail:
+            #remove "Thumbnails" from the path
+            outname='/'.join(splitname[0:2] + [os.path.extsep.join([metadata['Id'],'png'])])
+          else:
+            outname=None
+            continue
+
+        start=splitname[0]
         if start=='Saves':
-          log.debug("Extracting {} to {}.".format(name,filesystem.basepath))
-          zf.extract(name,filesystem.basepath)
+          modpath=filesystem.basepath
         else:
-          log.debug("Extracting {} to {}".format(name,filesystem.modpath))
-          zf.extract(name,filesystem.modpath)
+          modpath=filesystem.modpath
+        log.debug(f"Extracting {name} to {modpath}")
+        zf.extract(name,modpath)
+        if outname:
+          log.debug(f"Renaming {name} to {outname}")
+          os.rename(os.path.join(modpath,name), os.path.join(modpath,outname))
+          try:
+            outdir = os.path.dirname(os.path.join(modpath,name))
+            os.rmdir(outdir)
+          except OSError:
+            log.debug(f"Can't remove dir {outdir}")
+
   except zipfile.BadZipFile as e:
     log.error("Mod pak {} format appears corrupt - {}.".format(filename,e))
   except zipfile.LargeZipFile as e:
@@ -101,6 +131,12 @@ class Save:
     self.save_type=save_type
     self.filesystem = filesystem
     self.filename=filename
+    thumbnail = os.path.extsep.join(filename.split(os.path.extsep)[0:-1] + ['png']) #Known issue: this fails if filename doesn't contain an extsep
+    if os.path.isfile(thumbnail):
+        self.thumbnail = thumbnail
+    else:
+        self.thumbnail = None
+    self.thumb=os.path.isfile(os.path.extsep.join([filename.split(os.path.extsep)[0],'png']))
     #strip the local part off.
     fileparts=self.filename.split(os.path.sep)
     while fileparts[0]!='Saves' and fileparts[0]!='Mods':
@@ -118,7 +154,7 @@ class Save:
     log.info("About to export %s to %s" % (self.ident,export_filename))
     zfs = tts.filesystem.FileSystem(base_path="")
     zipComment = {
-      "Ver":1,
+      "Ver":PAK_VER,
       "Id":self.ident,
       "Type":self.save_type.name
     }
@@ -128,6 +164,11 @@ class Save:
       zf.comment=json.dumps(zipComment).encode('utf-8')
       log.debug("Writing {} (base {}) to {}".format(self.filename,os.path.basename(self.filename),zfs.get_path_by_type(os.path.basename(self.filename),self.save_type)))
       zf.write(self.filename,zfs.get_path_by_type(os.path.basename(self.filename),self.save_type))
+      if self.thumbnail:
+        filepath=zfs.get_path_by_type(os.path.basename(self.thumbnail),self.save_type)
+        arcname=os.path.join(os.path.dirname(filepath), 'Thumbnails', os.path.basename(filepath))
+        zf.write(self.thumbnail,arcname=arcname)
+        log.debug(f"Writing {self.thumbnail} to {arcname}")
       for url in self.models:
         log.debug("Writing {} to {}".format(url.location,zfs.get_model_path(os.path.basename(url.location))))
         zf.write(url.location,zfs.get_model_path(os.path.basename(url.location)))

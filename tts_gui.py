@@ -16,21 +16,12 @@ class SaveBrowser():
     ttk.Label(srcFrame,text="Select list source:").pack()
     self.save_type=Tk.IntVar()
     self.save_type.set(int(tts.SaveType.workshop))
-    ttk.Radiobutton(srcFrame,
-                   text="Workshop",
-                   variable=self.save_type,
-                   value=int(tts.SaveType.workshop),
-                   command=self.list_command).pack(side=Tk.LEFT)
-    ttk.Radiobutton(srcFrame,
-                   text="Save",
-                   variable=self.save_type,
-                   value=int(tts.SaveType.save),
-                   command=self.list_command).pack(side=Tk.LEFT)
-    ttk.Radiobutton(srcFrame,
-                   text="Chest",
-                   variable=self.save_type,
-                   value=int(tts.SaveType.chest),
-                   command=self.list_command).pack(side=Tk.LEFT)
+    for option in tts.SaveType:
+      ttk.Radiobutton(srcFrame,
+                     text=option.name.title(),
+                     variable=self.save_type,
+                     value=int(option.value),
+                     command=self.list_command).pack(side=Tk.LEFT)
     scrollFrame=ttk.Frame(master)
     scrollFrame.pack(expand=1,fill=Tk.BOTH)
     ttk.Label(scrollFrame,text="Files found:").pack()
@@ -51,7 +42,8 @@ class SaveBrowser():
 
   def list_command(self):
     """ Populates the list box"""
-    data=tts.describe_files_by_type(self.filesystem,self.save_type.get())
+    save_type = tts.SaveType(self.save_type.get())
+    data=tts.describe_files_by_type(self.filesystem,save_type)
     self.file_list.delete(0,Tk.END)
     self.file_store={}
     i=0
