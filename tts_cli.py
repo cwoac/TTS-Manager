@@ -247,7 +247,10 @@ class TTS_CLI:
     return 0,"Exported %s to %s" % (args.id,filename)
 
   def do_import(self,args):
-    return tts.save.importPak(self.filesystem,args.file)
+    if tts.save.importPak(self.filesystem,args.file):
+        return 0, f"Successfully imported {args.file} into {{TODO}}"
+    else:
+        return 1, f"Error importing {args.file}"
 
 if __name__ == "__main__":
   # fix windows' poor unicode support
