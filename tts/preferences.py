@@ -3,30 +3,35 @@ import tkinter.ttk as ttk
 import tkinter.simpledialog as simpledialog
 import tkinter.filedialog as filedialog
 import tkinter.messagebox as messagebox
-import winreg
 import tts
+import platform
+import os
 
-class Preferences():
+if platform.system() == 'Windows':
+  import winreg
+else:
+  import xdgappdirs
+  import configparser
+
+class Preferences(object):
+  def __new__(cls):
+    """Select the correct platform class."""
+    if platform.system() == 'Windows':
+      new_cls = PreferencesWin
+    else:
+      new_cls = PreferencesLinux
+    instance = super(Preferences, new_cls).__new__(new_cls)
+    if not issubclass(new_cls, cls) and new_cls != cls:
+      instance.__init__(n)
+    return instance
+
   def __init__(self):
-    self.connection=winreg.ConnectRegistry(None,winreg.HKEY_CURRENT_USER)
-    self.registry=winreg.OpenKey( self.connection, "Software\TTS Manager",0,winreg.KEY_ALL_ACCESS )
     self.changed=False
-    try:
-      self._locationIsUser="True"==winreg.QueryValueEx(self.registry,"locationIsUser")[0]
-    except FileNotFoundError as e:
-      self._locationIsUser=True
-    try:
-      self._TTSLocation=winreg.QueryValueEx(self.registry,"TTSLocation")[0]
-    except FileNotFoundError as e:
-      self._TTSLocation=""
-    try:
-      self._defaultSaveLocation=winreg.QueryValueEx(self.registry,"defaultSaveLocation")[0]
-    except FileNotFoundError as e:
-      self._defaultSaveLocation=""
-    try:
-      self._firstRun="True"==winreg.QueryValueEx(self.registry,"firstRun")[0]
-    except FileNotFoundError as e:
-      self._firstRun=True
+    self._locationIsUser = True
+    self._TTSLocation = ''
+    self._defaultSaveLocation = ''
+    self._firstRun = False
+    #child class must initialize these properly (load from disk or assign defaults)
 
   @property
   def locationIsUser(self):
@@ -34,9 +39,9 @@ class Preferences():
 
   @locationIsUser.setter
   def locationIsUser(self,value):
-    if self._locationIsUser==(value==1):
+    if self._locationIsUser==bool(value):
       return
-    self._locationIsUser=(value==1)
+    self._locationIsUser=bool(value)
     self.changed=True
 
   @property
@@ -45,6 +50,7 @@ class Preferences():
 
   @TTSLocation.setter
   def TTSLocation(self,value):
+    value = os.path.normpath(value)
     if self._TTSLocation==value:
       return
     self._TTSLocation=value
@@ -67,9 +73,9 @@ class Preferences():
 
   @firstRun.setter
   def firstRun(self,value):
-    if self._firstRun==(value==1):
+    if self._firstRun==bool(value):
       return
-    self._firstRun=(value==1)
+    self._firstRun=bool(value)
     self.changed=True
 
   def reset(self):
@@ -77,19 +83,12 @@ class Preferences():
     self._firstRun=1
     self._defaultSaveLocation=""
     self._TTSLocation=""
-    winreg.DeleteValue(self.registry,"locationIsUser")
-    winreg.DeleteValue(self.registry,"TTSLocation")
-    winreg.DeleteValue(self.registry,"defaultSaveLocation")
-    winreg.DeleteValue(self.registry,"firstRun")
+    #child class must delete values from disk storage
 
   def save(self):
     # No longer first run.
     self.firstRun=0
-    # Make sure all values have been createds
-    winreg.SetValueEx(self.registry,"locationIsUser",0,winreg.REG_SZ,str(self.locationIsUser))
-    winreg.SetValueEx(self.registry,"TTSLocation",0,winreg.REG_SZ,str(self.TTSLocation))
-    winreg.SetValueEx(self.registry,"defaultSaveLocation",0,winreg.REG_SZ,str(self.defaultSaveLocation))
-    winreg.SetValueEx(self.registry,"firstRun",0,winreg.REG_SZ,str(self._firstRun))
+    #Child class must save all 4 values to disk storage
 
   def validate(self):
     return self.get_filesystem().check_dirs()
@@ -100,12 +99,82 @@ class Preferences():
     return tts.filesystem.FileSystem(tts_install_path=self.TTSLocation)
 
   def __str__(self):
-    return """Preferences:
-locationIsUser: {}
-TTSLocation: {}
-DefaultSaveLocation: {}
-firstRun: {}""".format(self.locationIsUser,self.TTSLocation,self.defaultSaveLocation,self.firstRun)
+    return f"""Preferences:
+locationIsUser: {self.locationIsUser}
+TTSLocation: {self.TTSLocation}
+DefaultSaveLocation: {self.defaultSaveLocation}
+firstRun: {self.firstRun}"""
 
+
+class PreferencesWin(Preferences):
+
+  def __init__(self):
+    super().__init__()
+    self._connection=winreg.ConnectRegistry(None,winreg.HKEY_CURRENT_USER)
+    self._registry=winreg.CreateKeyEx( self._connection, "Software\TTS Manager",0,winreg.KEY_ALL_ACCESS )
+    try:
+      self._locationIsUser="True"==winreg.QueryValueEx(self._registry,"locationIsUser")[0]
+    except FileNotFoundError as e:
+      self._locationIsUser=True
+    try:
+      self._TTSLocation=os.path.normpath( winreg.QueryValueEx(self._registry,"TTSLocation")[0] )
+    except FileNotFoundError as e:
+      self._TTSLocation=""
+    try:
+      self._defaultSaveLocation=winreg.QueryValueEx(self._registry,"defaultSaveLocation")[0]
+    except FileNotFoundError as e:
+      self._defaultSaveLocation=""
+    try:
+      self._firstRun="True"==winreg.QueryValueEx(self._registry,"firstRun")[0]
+    except FileNotFoundError as e:
+      self._firstRun=True
+
+  def reset(self):
+    super().reset()
+    winreg.DeleteValue(self._registry,"locationIsUser")
+    winreg.DeleteValue(self._registry,"TTSLocation")
+    winreg.DeleteValue(self._registry,"defaultSaveLocation")
+    winreg.DeleteValue(self._registry,"firstRun")
+
+  def save(self):
+    super().save()
+    # Make sure all values have been createds
+    winreg.SetValueEx(self._registry,"locationIsUser",0,winreg.REG_SZ,str(self.locationIsUser))
+    winreg.SetValueEx(self._registry,"TTSLocation",0,winreg.REG_SZ,str(self.TTSLocation))
+    winreg.SetValueEx(self._registry,"defaultSaveLocation",0,winreg.REG_SZ,str(self.defaultSaveLocation))
+    winreg.SetValueEx(self._registry,"firstRun",0,winreg.REG_SZ,str(self._firstRun))
+
+
+class PreferencesLinux(Preferences):
+
+  def __init__(self):
+    super().__init__()
+    self._conffile = os.path.join(xdgappdirs.user_config_dir(),'tts_manager.ini')
+    self._config = configparser.ConfigParser(allow_no_value=True)
+    self._config['main'] = {'locationIsUser': 'yes',
+                         'TTSLocation': '',
+                         'defaultSaveLocation': '',
+                         'firstRun': '0'}
+    self._config.read(self._conffile, encoding='utf-8')
+    self._locationIsUser = self._config['main'].getboolean('locationIsUser')
+    self._TTSLocation = self._config['main']['TTSLocation']
+    self._defaultSaveLocation = self._config['main']['defaultSaveLocation']
+    self._firstRun = self._config['main'].getboolean('load_firstRun')
+
+  def reset(self):
+    super().reset()
+    os.unlink(self._conffile)
+    self.__init__()
+
+  def save(self):
+    super().save()
+    # Make sure all values have been createds
+    self._config['main']['locationIsUser'] = 'yes' if self._locationIsUser else 'no'
+    self._config['main']['TTSLocation'] = self._TTSLocation
+    self._config['main']['defaultSaveLocation'] = self._defaultSaveLocation
+    self._config['main']['firstRun'] = 'yes' if self._firstRun else 'no'
+    with open(self._conffile, 'w') as configfile:
+      self._config.write(configfile)
 
 
 class PreferencesDialog(simpledialog.Dialog):

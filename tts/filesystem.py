@@ -1,9 +1,18 @@
 import os
 import os.path
 import tts
+import platform
+if platform.system() == 'Linux':
+  import xdgappdirs
 
 def standard_basepath():
-  return os.path.join(os.path.expanduser("~"),"Documents","My Games","Tabletop Simulator")
+  if platform.system() == 'Windows':
+    basepath = os.path.join(os.path.expanduser("~"),"Documents","My Games","Tabletop Simulator")
+  elif platform.system() == 'Linux':
+    basepath = os.path.join(xdgappdirs.user_data_dir(),"Tabletop Simulator")
+  else:
+    basepath = os.path.join(os.path.expanduser("~"),"Library","Tabletop Simulator")
+  return basepath
 
 class FileSystem:
   def __init__(self,base_path=None,tts_install_path=None):
