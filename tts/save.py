@@ -57,6 +57,11 @@ def import_pak(filesystem, filename):
                     modpath = filesystem.basepath
                 else:
                     modpath = filesystem.modpath
+                target_base_name = outname if outname else name
+                target_file_name = os.path.join(modpath, target_base_name)
+                if os.path.isfile(target_file_name):
+                    log.warn(f"Not extracting existing file {target_file_name}")
+                    continue
                 log.debug(f"Extracting {name} to {modpath}")
                 zf.extract(name, modpath)
                 if outname:
