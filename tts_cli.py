@@ -46,7 +46,7 @@ class TTS_CLI:
         group_export.add_argument("-c", "--chest", action="store_const", dest='save_type', metavar='save_type',
                                   const=tts.SaveType.chest, help="ID is of chest file.")
         parser_export.add_argument("id", help="ID of mod/name of savegame to export.")
-        parser_export.add_argument("-m", "--missing", help="Only export missing files.")
+        parser_export.add_argument("-m", "--missing", action="store_true", help="Only export missing files.")
         parser_export.add_argument("-o", "--output", help="Location/file to export to.")
         parser_export.add_argument("-f", "--force", action="store_true", help="Force creation of export file.")
         parser_export.add_argument("-d", "--download", action="store_true",
@@ -217,7 +217,7 @@ class TTS_CLI:
 
     def do_export(self, args):
         filename = None
-        extension = args.missing if ".part.pak" else ".pak"
+        extension =  ".part.pak" if args.missing else ".pak"
         if args.output:
             if os.path.isdir(args.output):
                 filename = os.path.join(args.output, args.id + extension)
@@ -269,7 +269,7 @@ class TTS_CLI:
 
     def do_import(self, args):
         if tts.save.import_pak(self.filesystem, args.file):
-            return 0, f"Successfully imported {args.file} into {{TODO}}"
+            return 0, f"Successfully imported {args.file}"
         else:
             return 1, f"Error importing {args.file}"
 

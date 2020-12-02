@@ -49,7 +49,7 @@ class Url:
             return True
         # In theory it might still not be downloadable at this point as the server
         # might only have a partial copy. Going to assume that is unlikely enough we can ignore it.
-        return response.status < 400
+        return response.status >= 400
 
     def download(self):
         log = tts.logger()
