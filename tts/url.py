@@ -19,7 +19,10 @@ class Url:
 
     def examine_filesystem(self):
         if not self._looked_for_location:
-            self._location = self.filesystem.check_for_file_location(self.url, self._type)
+            result = self.filesystem.check_for_file_location(self.url, self._type)
+            if result:
+                # It seems I can't return a tuple of (None, None), so...
+                self._location, self._extension = result
             self._looked_for_location = True
 
     def is_unavailiable(self):
@@ -71,11 +74,14 @@ class Url:
             log.error("Error downloading %s (%s)" % (url, e))
             return False
 
+        self._extension = self._type.get_extension(data)
+
+
         filename = os.path.join(
             self.filesystem.get_dir(self._type),
             f"{self.stripped_url}{self._extension}"
         )
-
+        log.info(f"Writing file to {filename}")
         try:
             fh = open(filename, 'wb')
             fh.write(data)

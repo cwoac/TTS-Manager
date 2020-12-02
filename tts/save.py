@@ -150,11 +150,13 @@ class Save:
         log.debug("filename: {},save_name: {}, basename: {}".format(self.filename, self.save_name, self.basename))
         self.urls = [Url(url, type, self.filesystem) for url, type in get_save_urls(savedata)]
         self.missing = [x for x in self.urls if not x.exists]
-        self.images = [x for x in self.urls if x.exists and x.isImage]
-        self.models = [x for x in self.urls if x.exists and not x.isImage]
-        log.debug(
-            "Urls found {}:{} missing, {} models, {} images".format(len(self.urls), len(self.missing), len(self.models),
-                                                                    len(self.images)))
+        self.present_files = {}
+        for url in [u for u in self.urls if u.exists]:
+            try:
+                self.present_files[url.type].append(url)
+            except KeyError:
+                self.present_files[url.type] = [url]
+        log.debug(f"Urls found {len(self.urls)} ({len(self.missing)} missing)")
 
     def export(self, export_filename):
         log = tts.logger()
@@ -170,20 +172,20 @@ class Save:
         with zipfile.ZipFile(export_filename, 'w') as zf:
             zf.comment = json.dumps(zip_comment).encode('utf-8')
             log.debug("Writing {} (base {}) to {}".format(self.filename, os.path.basename(self.filename),
-                                                          zfs.get_path_by_type(os.path.basename(self.filename),
-                                                                               self.save_type)))
-            zf.write(self.filename, zfs.get_path_by_type(os.path.basename(self.filename), self.save_type))
+                                                          zfs.get_path_by_save_type(os.path.basename(self.filename),
+                                                                                    self.save_type)))
+            zf.write(self.filename, zfs.get_path_by_save_type(os.path.basename(self.filename), self.save_type))
             if self.thumbnail:
-                filepath = zfs.get_path_by_type(os.path.basename(self.thumbnail), self.save_type)
+                filepath = zfs.get_path_by_save_type(os.path.basename(self.thumbnail), self.save_type)
                 arcname = os.path.join(os.path.dirname(filepath), 'Thumbnails', os.path.basename(filepath))
                 zf.write(self.thumbnail, arcname=arcname)
                 log.debug(f"Writing {self.thumbnail} to {arcname}")
-            for url in self.models:
-                log.debug("Writing {} to {}".format(url.location, zfs.get_model_path(os.path.basename(url.location))))
-                zf.write(url.location, zfs.get_model_path(os.path.basename(url.location)))
-            for url in self.images:
-                log.debug("Writing {} to {}".format(url.location, zfs.get_model_path(os.path.basename(url.location))))
-                zf.write(url.location, zfs.get_image_path(os.path.basename(url.location)))
+            for file_type in self.present_files:
+                log.info(f"Writing {file_type} files")
+                for url in self.present_files[file_type]:
+                    target_file = zfs.get_file_path(os.path.basename(url.location), url.type)
+                    log.debug(f"Writing {url.location} to {target_file}")
+                    zf.write(url.location, target_file)
         log.info("File exported.")
 
     def export_missing(self, export_filename):
@@ -207,21 +209,19 @@ class Save:
             # Always write base file and thumbnail. They should be pretty small anyway.
             zf.comment = json.dumps(zip_comment).encode('utf-8')
             log.debug(
-                f"Writing {self.filename} (base {os.path.basename(self.filename)}) to {zfs.get_path_by_type(os.path.basename(self.filename), self.save_type)}")
-            zf.write(self.filename, zfs.get_path_by_type(os.path.basename(self.filename), self.save_type))
+                f"Writing {self.filename} (base {os.path.basename(self.filename)}) to {zfs.get_path_by_save_type(os.path.basename(self.filename), self.save_type)}")
+            zf.write(self.filename, zfs.get_path_by_save_type(os.path.basename(self.filename), self.save_type))
             if self.thumbnail:
-                filepath = zfs.get_path_by_type(os.path.basename(self.thumbnail), self.save_type)
+                filepath = zfs.get_path_by_save_type(os.path.basename(self.thumbnail), self.save_type)
                 arcname = os.path.join(os.path.dirname(filepath), 'Thumbnails', os.path.basename(filepath))
                 log.debug(f"Writing {self.thumbnail} to {arcname}")
                 zf.write(self.thumbnail, arcname=arcname)
-            for url in self.models:
-                if url.is_unavailiable():
-                    log.debug(f"Writing {url.location} to {zfs.get_model_path(os.path.basename(url.location))}")
-                    zf.write(url.location, zfs.get_model_path(os.path.basename(url.location)))
-            for url in self.images:
-                if url.is_unavailiable():
-                    log.debug(f"Writing {url.location} to {zfs.get_image_path(os.path.basename(url.location))}")
-                    zf.write(url.location, zfs.get_image_path(os.path.basename(url.location)))
+            for file_type in self.present_files:
+                log.info(f"Writing {file_type} files")
+                for url in self.present_files[file_type]:
+                    target_file = zfs.get_file_path(os.path.basename(url.location), url.type)
+                    log.debug(f"Writing {url.location} to {target_file}")
+                    zf.write(url.location, target_file)
             log.info("File exported.")
 
     @property
@@ -254,13 +254,9 @@ class Save:
             result += "Missing:\n"
             for x in self.missing:
                 result += str(x) + "\n"
-        if len(self.images) > 0:
-            result += "Images:\n"
-            for x in self.images:
-                result += str(x) + "\n"
-        if len(self.models) > 0:
-            result += "Models:\n"
-            for x in self.models:
+        for file_type in self.present_files:
+            result += f"{file_type}:\n"
+            for url in self.present_files[file_type]:
                 result += str(x) + "\n"
         return result
 

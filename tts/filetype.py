@@ -1,15 +1,6 @@
 from enum import Enum
-import imghdr
 
-
-# fix jpeg detection
-def test_jpg(h, f):
-    """binary jpg"""
-    if h[:3] == b'\xff\xd8\xff':
-        return 'jpg'
-
-
-imghdr.tests.append(test_jpg)
+from tts.util import identify_image_extension
 
 
 class FileType(Enum):
@@ -32,12 +23,10 @@ class FileType(Enum):
         return result
 
     def get_extension(self, data):
-        if self.name is FileType.IMAGE:
-            image_type = imghdr.what("", data)
-            if image_type == 'jpeg':
-                image_type = 'jpg'
+        if self is FileType.IMAGE:
+            image_type = identify_image_extension(data)
             if image_type:
-                return "." + image_type
+                return image_type
             return ""
         return _url_extensions[self]
 
