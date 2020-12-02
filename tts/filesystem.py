@@ -2,6 +2,10 @@ import os
 import os.path
 import tts
 import platform
+
+import tts.util
+from tts.filetype import FileType
+
 if platform.system() == 'Linux':
   import xdgappdirs
 
@@ -64,6 +68,9 @@ class FileSystem:
   def images_dir(self):
     return self._images
 
+  def get_dir(self, type: FileType) -> str :
+    return os.path.join(self._mods, type.value)
+
   def get_image_path(self,filename):
     return os.path.join(self._images,filename)
 
@@ -82,30 +89,20 @@ class FileSystem:
   def get_path_by_type(self,filename,save_type):
     return os.path.join(self.get_dir_by_type(save_type),filename)
 
-  def find_details(self,basename):
-    result=self.find_image(basename)
-    if result:
-      return result,True
-    result=self.find_model(basename)
-    if result:
-      return result,False
-    return None,None
+  def check_for_file_location(self, basename: str, type: FileType) -> str:
+    if type is FileType.IMAGE:
+      return self.find_image(basename)
+    if type is FileType.NONE:
+      return None
+    filename = os.path.join(self.get_dir(type),
+                            f"{tts.util.strip_filename(basename)}{type.get_extension(None)}")
+    return filename if os.path.isfile(filename) else None
 
-  def find_image(self,basename):
+  def find_image(self, basename: str) -> str:
     result=None
-    stripname = tts.strip_filename(basename)
+    stripname = tts.util.strip_filename(basename)
     for image_format in ['.png','.jpg','.bmp']:
       filename=os.path.join(self._images,stripname+image_format)
-      if os.path.isfile(filename):
-        result=filename
-        break
-    return result
-
-  def find_model(self,basename):
-    result=None
-    stripname = tts.strip_filename(basename)
-    for model_format in ['.obj']:
-      filename=os.path.join(self._models,stripname+model_format)
       if os.path.isfile(filename):
         result=filename
         break

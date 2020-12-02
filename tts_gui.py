@@ -120,11 +120,22 @@ class TTS_GUI:
     self.targetEntry.delete(0,Tk.END)
     self.targetEntry.insert(0,self.export_filename)
 
+  def pickPartialExportTarget(self):
+    exportname = filedialog.asksaveasfilename(
+      parent=self.root,
+      initialdir=os.path.join(os.path.expanduser("~"),"Downloads"),
+      filetypes=[('Part PAK files','*.part.pak')],
+      defaultextension='part.pak',
+      title='Choose export target')
+    self.export_filename = os.path.normpath(exportname)
+    self.targetEntry.delete(0,Tk.END)
+    self.targetEntry.insert(0,self.export_filename)
+
   def pickImportTarget(self):
     importname = filedialog.askopenfilename(
       parent=self.root,
       initialdir=os.path.join(os.path.expanduser("~"),"Downloads"),
-      filetypes=[('PAK files','*.pak')],
+      filetypes=[('PAK files','*.pak'),('Part PAK files','*.part.pak')],
       defaultextension='pak',
       title='Choose import target')
     self.import_filename = os.path.normpath(importname)
@@ -175,6 +186,16 @@ class TTS_GUI:
                     state=Tk.DISABLED,
                     command=self.toggleDownloadMissing)
     self.downloadMissingFilesCB.pack()
+    self.exportMissingOnly=Tk.BooleanVar()
+    self.exportMissingOnly.set(False)
+    self.exportMissingOnlyCB=ttk.Checkbutton(targetFrame,
+                                             text="Export only currently unavailiable files",
+                                             variable=self.exportMissingOnly,
+                                             offvalue=False,
+                                             onvalue=True,
+                                             state=Tk.DISABLED,
+                                             )
+    self.exportMissingOnlyCB.pack()
     ttk.Label(targetFrame,text="Select output file").pack()
     self.targetEntry=ttk.Entry(targetFrame)
     self.targetEntry.pack(side=Tk.LEFT,expand=Tk.Y,fill=Tk.X)

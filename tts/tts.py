@@ -1,5 +1,4 @@
 import os.path
-import string
 import json
 import tts.logger
 import tts.save
@@ -14,11 +13,6 @@ class SaveType(IntEnum):
 
 def get_default_fs():
   return FileSystem(standard_basepath())
-
-def strip_filename(filename):
-  # Convert a filename to TTS format.
-  valid_chars = "%s%s" % (string.ascii_letters, string.digits)
-  return ''.join(c for c in filename if c in valid_chars)
 
 def validate_metadata(metadata, maxver):
   # TODO: extract into new class

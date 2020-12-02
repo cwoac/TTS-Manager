@@ -1,6 +1,8 @@
 import zipfile
+from typing import Tuple, Set
 
 import tts
+from tts.filetype import FileType
 from .tts import *
 from .url import Url
 
@@ -82,7 +84,7 @@ def import_pak(filesystem, filename):
     return True
 
 
-def get_save_urls(savedata):
+def get_save_urls(save_data) -> Set[Tuple[str, FileType]]:
     """
     Iterate over all the values in the json file, building a (key,value) set of
     all the values whose key ends in "URL"
@@ -100,31 +102,24 @@ def get_save_urls(savedata):
         if not data:
             return urls
         for key in data:
-            if type(data[key]) is not str or key == 'PageURL' or key == 'Rules':
+            key_type = FileType.identify_type(key)
+
+            if not key_type or key_type is FileType.NONE:
                 # If it isn't a string, it can't be an url.
                 # Also don't save tablet state / rulebooks
                 continue
-            if key.endswith('URL') and data[key] != '':
-                log.debug("Found {}:{}".format(key, data[key]))
-                urls.add(data[key])
-                continue
-            protocols = data[key].split('://')
-            if len(protocols) == 1:
-                # not an url
-                continue
-            if protocols[0] in ['http', 'https', 'ftp']:
-                # belt + braces.
-                urls.add(data[key])
-                log.debug("Found {}:{}".format(key, data[key]))
+            if data[key] != '':
+                log.debug(f"Found {key_type}: {key}:{data[key]}")
+                urls.add((data[key], key_type))
                 continue
         for item in data.values():
             urls |= get_save_urls(item)
         return urls
 
-    if type(savedata) is list:
-        return parse_list(savedata)
-    if type(savedata) is dict:
-        return parse_dict(savedata)
+    if type(save_data) is list:
+        return parse_list(save_data)
+    if type(save_data) is dict:
+        return parse_dict(save_data)
     return set()
 
 
@@ -153,7 +148,7 @@ class Save:
             fileparts = fileparts[1:]
         self.basename = os.path.join(*fileparts)
         log.debug("filename: {},save_name: {}, basename: {}".format(self.filename, self.save_name, self.basename))
-        self.urls = [Url(url, self.filesystem) for url in get_save_urls(savedata)]
+        self.urls = [Url(url, type, self.filesystem) for url, type in get_save_urls(savedata)]
         self.missing = [x for x in self.urls if not x.exists]
         self.images = [x for x in self.urls if x.exists and x.isImage]
         self.models = [x for x in self.urls if x.exists and not x.isImage]
