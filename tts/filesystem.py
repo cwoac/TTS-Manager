@@ -120,19 +120,19 @@ class FileSystem:
         return result
 
     def get_save_filenames(self):
-        files = self.get_filenames_in(self._saves)
+        files = get_filenames_in(self._saves)
         if files and 'SaveFileInfos' in files:
             files.remove('SaveFileInfos')
         return files
 
     def get_workshop_filenames(self):
-        files = self.get_filenames_in(self._workshop)
+        files = get_filenames_in(self._workshop)
         if files and 'WorkshopFileInfos' in files:
             files.remove('WorkshopFileInfos')
         return files
 
     def get_chest_filenames(self):
-        return self.get_filenames_in(self._chest)
+        return get_filenames_in(self._chest)
 
     def get_filenames_by_type(self, save_type):
         if save_type == tts.SaveType.workshop:
