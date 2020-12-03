@@ -2,12 +2,16 @@
 Import/Export Mods from Tabletop Simulator, including all assets.
 
 ## Status
-
-Currently this code is rather alpha quality. It has also only been tested on a limited number of mods and machines. **Do not rely on this to backup your files without checking it restores correctly on another install.** If you find a configuration / mod that doesn't work, please let me know.
+Currently this code is rather alpha quality. It has also only been tested on a limited number of mods and machines.
+**Do not rely on this to backup your files without checking it restores correctly on another install.**
+If you find a configuration / mod that doesn't work, please let me know.
 
 Listing, export and import all should work. Note that old-style mods (`.cjc` files) are *not* supported - they simply will not be listed.
 
-To export a mod, you ideally should have downloaded *all* assets. Opening a mod in Tabletop Simulator is usually enough, but make sure you have taken something out of every bag in the mod. If anything is missing, then the tool will tell you. TTS Manager can attempt to download the files for you, but this feature is very new.
+To export a mod, you ideally should have downloaded *all* assets.
+Opening a mod in Tabletop Simulator is usually enough, but make sure you have taken something out of every bag in the mod.
+If anything is missing, then the tool will tell you.
+TTS Manager can attempt to download the files for you, but this feature is very new.
 
 ## Quickstart
 Download the installer from the [releases](https://github.com/cwoac/TTS-Manager/releases) and install it. Then run the gui from the created shortcut link.
@@ -26,3 +30,9 @@ These are primarily tracked on github, but roughly:
 - A better gui
 - downloading arbitary pak files
 - LOTS MORE TESTING.
+
+## Changelog
+* V0.6.0
+  - Now correctly grabs non-image/model types for the new layout of TTS mods
+  - Added ability to export just the 'unavailable' files of a mod to a 'part.pak' file.
+  - Various bug fixes and preliminary Linux/Mac support from 'bobpaul' (thanks!)

@@ -72,7 +72,7 @@ class SaveBrowser():
                   filename=filename,
                   save_type=tts.SaveType(self.save_type.get()),
                   filesystem=self.filesystem)
-    if self.save.isInstalled:
+    if self.save.is_installed:
       self.status_label.config(text="All files found.")
     else:
       self.status_label.config(text="Some cache files missing - check details on list page.")
@@ -96,7 +96,7 @@ class TTS_GUI:
     self.list_sb.list_command()
 
   def update_export_frame_details(self,event):
-    if self.export_sb.save.isInstalled:
+    if self.export_sb.save.is_installed:
       self.downloadMissingFiles.set(False)
       self.downloadMissingFilesCB.config(state=Tk.DISABLED)
       self.exportButton.config(state=Tk.NORMAL)
@@ -120,11 +120,22 @@ class TTS_GUI:
     self.targetEntry.delete(0,Tk.END)
     self.targetEntry.insert(0,self.export_filename)
 
+  def pickPartialExportTarget(self):
+    exportname = filedialog.asksaveasfilename(
+      parent=self.root,
+      initialdir=os.path.join(os.path.expanduser("~"),"Downloads"),
+      filetypes=[('Part PAK files','*.part.pak')],
+      defaultextension='part.pak',
+      title='Choose export target')
+    self.export_filename = os.path.normpath(exportname)
+    self.targetEntry.delete(0,Tk.END)
+    self.targetEntry.insert(0,self.export_filename)
+
   def pickImportTarget(self):
     importname = filedialog.askopenfilename(
       parent=self.root,
       initialdir=os.path.join(os.path.expanduser("~"),"Downloads"),
-      filetypes=[('PAK files','*.pak')],
+      filetypes=[('PAK files','*.pak'),('Part PAK files','*.part.pak')],
       defaultextension='pak',
       title='Choose import target')
     self.import_filename = os.path.normpath(importname)
@@ -132,7 +143,7 @@ class TTS_GUI:
     self.importEntry.insert(0,self.import_filename)
 
   def exportPak(self):
-    if not self.export_sb.save.isInstalled:
+    if not self.export_sb.save.is_installed:
       successful = self.export_sb.save.download()
       if not successful:
         messagebox.showinfo("TTS Manager","Export failed (see log)")
@@ -143,7 +154,7 @@ class TTS_GUI:
 
   def importPak(self):
     self.import_filename=self.importEntry.get()
-    rc=tts.save.importPak(self.filesystem,self.import_filename)
+    rc=tts.save.import_pak(self.filesystem, self.import_filename)
     if rc:
       messagebox.showinfo("TTS Manager","Pak imported successfully.")
     else:
@@ -175,6 +186,16 @@ class TTS_GUI:
                     state=Tk.DISABLED,
                     command=self.toggleDownloadMissing)
     self.downloadMissingFilesCB.pack()
+    self.exportMissingOnly=Tk.BooleanVar()
+    self.exportMissingOnly.set(False)
+    self.exportMissingOnlyCB=ttk.Checkbutton(targetFrame,
+                                             text="Export only currently unavailiable files",
+                                             variable=self.exportMissingOnly,
+                                             offvalue=False,
+                                             onvalue=True,
+                                             state=Tk.DISABLED,
+                                             )
+    self.exportMissingOnlyCB.pack()
     ttk.Label(targetFrame,text="Select output file").pack()
     self.targetEntry=ttk.Entry(targetFrame)
     self.targetEntry.pack(side=Tk.LEFT,expand=Tk.Y,fill=Tk.X)
@@ -202,7 +223,7 @@ class TTS_GUI:
     ttk.Button(importFrame,text="Import",command=self.importPak).pack()
 
   def update_download_frame_details(self,event):
-    if self.download_sb.save.isInstalled:
+    if self.download_sb.save.is_installed:
       self.downloadButton.config(state=Tk.DISABLED)
     else:
       self.downloadButton.config(state=Tk.NORMAL)
