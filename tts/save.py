@@ -6,7 +6,7 @@ from tts.filetype import FileType
 from .tts import *
 from .url import Url
 
-PAK_VER = 2
+PAK_VER = 3
 
 
 def import_pak(filesystem, filename):

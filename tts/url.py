@@ -76,7 +76,6 @@ class Url:
 
         self._extension = self._type.get_extension(data)
 
-
         filename = os.path.join(
             self.filesystem.get_dir(self._type),
             f"{self.stripped_url}{self._extension}"

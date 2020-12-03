@@ -1,15 +1,33 @@
 import os
 import os.path
+import platform
 from typing import Tuple
 
 import tts
-import platform
-
 import tts.util
 from tts.filetype import FileType
 
 if platform.system() == 'Linux':
     import xdgappdirs
+
+
+def get_json_filename_from(basename, paths):
+    result = None
+    for pth in paths:
+        filename = os.path.join(pth, basename + '.json')
+        if os.path.isfile(filename):
+            result = filename
+            break
+    # TODO: error handling here
+    return result
+
+
+def get_filenames_in(search_path):
+    if not os.path.isdir(search_path):
+        tts.logger().warn("Tried to search non-existent path {}.".format(search_path))
+        return []
+    return [os.path.splitext(file)[0] for file in os.listdir(search_path) if
+            os.path.splitext(file)[1].lower() == '.json']
 
 
 def standard_basepath():
@@ -101,13 +119,6 @@ class FileSystem:
                 break
         return result
 
-    def get_filenames_in(self, search_path):
-        if not os.path.isdir(search_path):
-            tts.logger().warn("Tried to search non-existent path {}.".format(search_path))
-            return []
-        return [os.path.splitext(file)[0] for file in os.listdir(search_path) if
-                os.path.splitext(file)[1].lower() == '.json']
-
     def get_save_filenames(self):
         files = self.get_filenames_in(self._saves)
         if files and 'SaveFileInfos' in files:
@@ -133,21 +144,11 @@ class FileSystem:
         # TODO: error handling here
         return None
 
-    def get_json_filename_from(self, basename, paths):
-        result = None
-        for pth in paths:
-            filename = os.path.join(pth, basename + '.json')
-            if os.path.isfile(filename):
-                result = filename
-                break
-        # TODO: error handling here
-        return result
-
     def get_json_filename(self, basename):
-        return self.get_json_filename_from(basename, [self._workshop, self._saves, self._chest])
+        return get_json_filename_from(basename, [self._workshop, self._saves, self._chest])
 
     def get_json_filename_for_type(self, basename, save_type):
-        return self.get_json_filename_from(basename, [self.get_dir_by_type(save_type)])
+        return get_json_filename_from(basename, [self.get_dir_by_type(save_type)])
 
     def get_json_filename_type(self, basename):
         if os.path.isfile(os.path.join(self._workshop, basename + '.json')):

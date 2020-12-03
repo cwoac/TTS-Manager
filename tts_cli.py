@@ -217,7 +217,7 @@ class TTS_CLI:
 
     def do_export(self, args):
         filename = None
-        extension =  ".part.pak" if args.missing else ".pak"
+        extension = ".part.pak" if args.missing else ".pak"
         if args.output:
             if os.path.isdir(args.output):
                 filename = os.path.join(args.output, args.id + extension)
@@ -249,7 +249,7 @@ class TTS_CLI:
         if not save.is_installed:
             if not args.download:
                 return 1, "Unable to find all urls required by %s. Rerun with -d to try and download them or open it within TTS.\n%s" % (
-                args.id, save)
+                    args.id, save)
             else:
                 tts.logger().info("Downloading missing files...")
                 successful = save.download()
@@ -261,9 +261,9 @@ class TTS_CLI:
             return 1, "%s already exists. Please specify another file or use '-f'" % filename
         tts.logger().info("Exporting json file %s to %s" % (args.id, filename))
         if args.missing:
-          save.export_missing(filename)
+            save.export_missing(filename)
         else:
-          save.export(filename)
+            save.export(filename)
         # TODO: exception handling
         return 0, "Exported %s to %s" % (args.id, filename)
 
