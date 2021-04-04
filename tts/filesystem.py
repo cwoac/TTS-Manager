@@ -4,10 +4,17 @@ import tts
 import platform
 if platform.system() == 'Linux':
   import xdgappdirs
+elif platform.system() == 'Windows':
+  import ctypes.wintypes
 
 def standard_basepath():
   if platform.system() == 'Windows':
-    basepath = os.path.join(os.path.expanduser("~"),"Documents","My Games","Tabletop Simulator")
+    buf = ctypes.create_unicode_buffer(ctypes.wintypes.MAX_PATH)
+    CSIDL_PERSONAL = 5
+    SHGFP_TYPE_CURRENT = 0
+    ctypes.windll.shell32.SHGetFolderPathW(None, CSIDL_PERSONAL, None, SHGFP_TYPE_CURRENT, buf)
+
+    basepath = os.path.join(buf.value,"My Games","Tabletop Simulator")
   elif platform.system() == 'Linux':
     basepath = os.path.join(xdgappdirs.user_data_dir(),"Tabletop Simulator")
   else:
